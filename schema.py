@@ -6,7 +6,7 @@ class BaseCollectionsSchema(BaseModel):
     id: int
 
 
-class GetAllCollections(BaseModel):
+class GetAllCollectionsSchema(BaseModel):
     page: int
     per_page: int
     total_items: int
@@ -15,11 +15,19 @@ class GetAllCollections(BaseModel):
     items: list[BaseCollectionsSchema]
 
 
-class CreateCollection(BaseModel):
+class CreateCollectionSchema(BaseModel):
     title: str
 
     @field_validator("title")
     def title_validator(cls, value: str):
-        if not value.isalpha():
+        if not value.isalnum():
             raise ValueError("please inter a valid collection")
         return value
+
+
+class UpdateCollectionSchema(CreateCollectionSchema):
+    pass
+
+
+class DeleteCollectionSchema(BaseModel):
+    title: str
