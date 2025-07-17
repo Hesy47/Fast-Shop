@@ -25,7 +25,7 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 from database import db_base
-from models import Collection
+from models import Collection, Product
 
 target_metadata = db_base.metadata
 
