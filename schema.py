@@ -32,7 +32,7 @@ class CreateCollectionSchema(BaseModel):
 
         with get_db_python() as db:
             unique_title = (
-                db.query(Collection).filter(Collection.title == value).exists()
+                db.query(Collection).filter(Collection.title == value).first()
             )
 
             if unique_title:
