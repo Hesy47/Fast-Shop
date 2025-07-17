@@ -4,16 +4,35 @@ from dependencies import get_db_fast
 from sqlalchemy.orm import Session
 from models import Collection
 from schema import GetAllCollectionsSchema, CreateCollectionSchema
-from schema import UpdateCollectionSchema, DeleteCollectionSchema
+from schema import UpdateCollectionSchema, DeleteCollectionSchema, GetCollection
 import uvicorn
 
 app = FastAPI(debug=True)
 
 
+@app.get("/get-collection/{collection_id}", response_model=GetCollection)
+async def get_collection(
+    collection_id: int,
+    db: Session = Depends(get_db_fast),
+):
+
+    collection_query = (
+        db.query(Collection).filter(Collection.id == collection_id).first()
+    )
+
+    if collection_query is None:
+        return JSONResponse(
+            {"message": "we do not have such this collection"},
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    return {"item": collection_query, "status": "200"}
+
+
 @app.get("/get-all-collections", response_model=GetAllCollectionsSchema)
 async def get_all_collections(
     page: int = Query(1, ge=1),
-    per_page: int = Query(16, le=100),
+    per_page: int = Query(16, le=20),
     db: Session = Depends(get_db_fast),
 ):
     total_items = db.query(Collection).count()
@@ -39,6 +58,7 @@ async def create_collection(
     input_collection: CreateCollectionSchema,
     db: Session = Depends(get_db_fast),
 ):
+
     new_collection = Collection(**input_collection.model_dump())
 
     db.add(new_collection)
