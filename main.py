@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, Query, status
 from fastapi.responses import JSONResponse
 from dependencies import get_db_fast
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from models import Collection, Product
 from schema import GetAllCollectionsSchema, CreateCollectionSchema
 from schema import UpdateCollectionSchema, DeleteCollectionSchema, GetCollection
@@ -128,7 +128,12 @@ async def delete_collection(
 
 @app.get("/get-product/{product_id}", response_model=GetProduct)
 def get_product(product_id: int, db: Session = Depends(get_db_fast)):
-    product_query = db.query(Product).filter(Product.id == product_id).first()
+    product_query = (
+        db.query(Product)
+        .options(joinedload(Product.collection))
+        .filter(Product.id == product_id)
+        .first()
+    )
 
     if product_query is None:
         return JSONResponse(
@@ -136,7 +141,16 @@ def get_product(product_id: int, db: Session = Depends(get_db_fast)):
             status.HTTP_404_NOT_FOUND,
         )
 
-    return {"item": product_query}
+    return {
+        "id": product_query.id,
+        "title": product_query.title,
+        "price": product_query.price,
+        "description": product_query.description,
+        "menu": product_query.menu,
+        "collection_id": product_query.collection_id,
+        "image_path": product_query.image_path,
+        "collection_title": product_query.collection.title,
+    }
 
 
 if __name__ == "__main__":

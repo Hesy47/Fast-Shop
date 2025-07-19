@@ -17,8 +17,8 @@ class Collection(db_base):
 
 
 class ProductMenuEnums(enum.Enum):
-    CASUAL = "casual"
-    SPECIAL = "special"
+    casual = "casual"
+    special = "special"
 
 
 class Product(db_base):
@@ -31,7 +31,7 @@ class Product(db_base):
     menu = Column(
         Enum(ProductMenuEnums),
         nullable=False,
-        default=ProductMenuEnums.CASUAL,
+        default=ProductMenuEnums.casual,
     )
     collection_id = Column(BigInteger, ForeignKey("collections.id"), nullable=False)
     collection = relationship("Collection", back_populates="products")

@@ -57,7 +57,8 @@ class BaseProductSchema(BaseModel):
     menu: str
     collection_id: int
     image_path: str
+    collection_title: str
 
 
-class GetProduct(BaseModel):
-    item: BaseProductSchema
+class GetProduct(BaseProductSchema):
+    pass
