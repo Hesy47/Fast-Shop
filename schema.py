@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, PositiveFloat
 from dependencies import get_db_python
 from models import Collection
 
@@ -47,3 +47,17 @@ class UpdateCollectionSchema(CreateCollectionSchema):
 
 class DeleteCollectionSchema(BaseModel):
     title: str
+
+
+class BaseProductSchema(BaseModel):
+    id: int
+    title: str
+    price: PositiveFloat
+    description: str
+    menu: str
+    collection_id: int
+    image_path: str
+
+
+class GetProduct(BaseModel):
+    item: BaseProductSchema

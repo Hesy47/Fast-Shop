@@ -2,9 +2,10 @@ from fastapi import FastAPI, Depends, Query, status
 from fastapi.responses import JSONResponse
 from dependencies import get_db_fast
 from sqlalchemy.orm import Session
-from models import Collection
+from models import Collection, Product
 from schema import GetAllCollectionsSchema, CreateCollectionSchema
 from schema import UpdateCollectionSchema, DeleteCollectionSchema, GetCollection
+from schema import GetProduct
 import uvicorn
 
 app = FastAPI(debug=True)
@@ -123,6 +124,19 @@ async def delete_collection(
         },
         status.HTTP_202_ACCEPTED,
     )
+
+
+@app.get("/get-product/{product_id}", response_model=GetProduct)
+def get_product(product_id: int, db: Session = Depends(get_db_fast)):
+    product_query = db.query(Product).filter(Product.id == product_id).first()
+
+    if product_query is None:
+        return JSONResponse(
+            {"message": "we do not have such this product with given id"},
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    return {"item": product_query}
 
 
 if __name__ == "__main__":
