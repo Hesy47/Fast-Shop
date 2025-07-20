@@ -4,21 +4,24 @@ from dependencies import get_db_fast
 from sqlalchemy.orm import Session, joinedload
 from models import Collection, Product
 from schema import GetAllCollectionsSchema, CreateCollectionSchema
-from schema import UpdateCollectionSchema, DeleteCollectionSchema, GetCollection
-from schema import GetProduct
+from schema import UpdateCollectionSchema, DeleteCollectionSchema, GetCollectionSchema
+from schema import GetProductSchema, GetAllProductsSchema
 import uvicorn
 
 app = FastAPI(debug=True)
 
 
-@app.get("/get-collection/{collection_id}", response_model=GetCollection)
+@app.get("/get-collection/{collection_id}", response_model=GetCollectionSchema)
 async def get_collection(
     collection_id: int,
     db: Session = Depends(get_db_fast),
 ):
 
     collection_query = (
-        db.query(Collection).filter(Collection.id == collection_id).first()
+        db.query(Collection)
+        .options(joinedload(Collection.products))
+        .filter(Collection.id == collection_id)
+        .first()
     )
 
     if collection_query is None:
@@ -39,7 +42,13 @@ async def get_all_collections(
     total_items = db.query(Collection).count()
     skip = (page - 1) * per_page
 
-    collections_query = db.query(Collection).offset(skip).limit(per_page).all()
+    collections_query = (
+        db.query(Collection)
+        .options(joinedload(Collection.products))
+        .offset(skip)
+        .limit(per_page)
+        .all()
+    )
 
     has_next = (skip + per_page) < total_items
     has_previous = page > 1
@@ -126,8 +135,8 @@ async def delete_collection(
     )
 
 
-@app.get("/get-product/{product_id}", response_model=GetProduct)
-def get_product(product_id: int, db: Session = Depends(get_db_fast)):
+@app.get("/get-product/{product_id}", response_model=GetProductSchema)
+async def get_product(product_id: int, db: Session = Depends(get_db_fast)):
     product_query = (
         db.query(Product)
         .options(joinedload(Product.collection))
@@ -150,6 +159,52 @@ def get_product(product_id: int, db: Session = Depends(get_db_fast)):
         "collection_id": product_query.collection_id,
         "image_path": product_query.image_path,
         "collection_title": product_query.collection.title,
+    }
+
+
+@app.get("/get-all-products", response_model=GetAllProductsSchema)
+async def get_all_products(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(16, le=20),
+    db: Session = Depends(get_db_fast),
+):
+    total_items = db.query(Product).count()
+    skip = (page - 1) * per_page
+
+    products_query = (
+        db.query(Product)
+        .options(joinedload(Product.collection))
+        .offset(skip)
+        .limit(per_page)
+        .all()
+    )
+
+    items = []
+
+    for product in products_query:
+        product_data = {
+            "id": product.id,
+            "title": product.title,
+            "price": product.price,
+            "description": product.description,
+            "menu": product.menu,
+            "collection_id": product.collection_id,
+            "image_path": product.image_path,
+            "collection_title": product.collection.title,
+        }
+
+        items.append(product_data)
+
+    has_next = (skip + per_page) < total_items
+    has_previous = page > 1
+
+    return {
+        "page": page,
+        "per_page": per_page,
+        "total_items": total_items,
+        "has_next": has_next,
+        "has_previous": has_previous,
+        "items": items,
     }
 
 

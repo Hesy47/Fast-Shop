@@ -3,13 +3,13 @@ from dependencies import get_db_python
 from models import Collection
 
 
-class BaseCollectionsSchema(BaseModel):
+class BaseGetCollectionsSchema(BaseModel):
     title: str
     id: int
 
 
-class GetCollection(BaseModel):
-    item: BaseCollectionsSchema
+class GetCollectionSchema(BaseModel):
+    item: BaseGetCollectionsSchema
     status: str
 
 
@@ -19,7 +19,7 @@ class GetAllCollectionsSchema(BaseModel):
     total_items: int
     has_next: bool
     has_previous: bool
-    items: list[BaseCollectionsSchema]
+    items: list[BaseGetCollectionsSchema]
 
 
 class CreateCollectionSchema(BaseModel):
@@ -60,5 +60,14 @@ class BaseProductSchema(BaseModel):
     collection_title: str
 
 
-class GetProduct(BaseProductSchema):
+class GetProductSchema(BaseProductSchema):
     pass
+
+
+class GetAllProductsSchema(BaseModel):
+    page: int
+    per_page: int
+    total_items: int
+    has_next: bool
+    has_previous: bool
+    items: list[BaseProductSchema]
