@@ -1,6 +1,6 @@
 from pydantic import BaseModel, field_validator, PositiveFloat
 from dependencies import get_db_python
-from models import Collection
+from models import Collection, Product
 
 
 class BaseGetCollectionsSchema(BaseModel):
@@ -28,7 +28,7 @@ class CreateCollectionSchema(BaseModel):
     @field_validator("title")
     def title_validator(cls, value: str):
         if not value.isalnum():
-            raise ValueError("please inter a valid collection")
+            raise ValueError("please inter a valid title")
 
         with get_db_python() as db:
             unique_title = (
@@ -71,3 +71,24 @@ class GetAllProductsSchema(BaseModel):
     has_next: bool
     has_previous: bool
     items: list[BaseProductSchema]
+
+
+class CreateProductSchema(BaseModel):
+    title: str
+    price: PositiveFloat
+    description: str
+    menu: str
+    collection_id: int
+
+    @field_validator("title")
+    def title_validator(cls, value: str):
+        if not value.isalnum():
+            raise ValueError("please inter a valid title")
+
+        with get_db_python() as db:
+            unique_title = db.query(Product).filter(Product.title == value).first()
+
+            if unique_title:
+                raise ValueError("we already have this collection in our DataBase")
+
+        return value

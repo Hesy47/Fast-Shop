@@ -1,14 +1,18 @@
 from fastapi import FastAPI, Depends, Query, status
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from dependencies import get_db_fast
 from sqlalchemy.orm import Session, joinedload
 from models import Collection, Product
 from schema import GetAllCollectionsSchema, CreateCollectionSchema
 from schema import UpdateCollectionSchema, DeleteCollectionSchema, GetCollectionSchema
-from schema import GetProductSchema, GetAllProductsSchema
+from schema import GetProductSchema, GetAllProductsSchema, CreateProductSchema
 import uvicorn
 
 app = FastAPI(debug=True)
+
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/get-collection/{collection_id}", response_model=GetCollectionSchema)
@@ -206,6 +210,14 @@ async def get_all_products(
         "has_previous": has_previous,
         "items": items,
     }
+
+
+@app.post("/create-product")
+async def create_product(
+    input_product: CreateProductSchema,
+    db: Session = Depends(get_db_fast),
+):
+    pass
 
 
 if __name__ == "__main__":
