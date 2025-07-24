@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, Query, status
+from fastapi import FastAPI, Depends, Query, status, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from dependencies import get_db_fast
@@ -8,11 +8,13 @@ from schema import GetAllCollectionsSchema, CreateCollectionSchema
 from schema import UpdateCollectionSchema, DeleteCollectionSchema, GetCollectionSchema
 from schema import GetProductSchema, GetAllProductsSchema, CreateProductSchema
 import uvicorn
+import shutil
 
 app = FastAPI(debug=True)
 
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
+images_dir = "static/images"
 
 
 @app.get("/get-collection/{collection_id}", response_model=GetCollectionSchema)
@@ -69,9 +71,13 @@ async def get_all_collections(
 
 @app.post("/create-collection")
 async def create_collection(
-    input_collection: CreateCollectionSchema,
+    title: str = Form(),
     db: Session = Depends(get_db_fast),
 ):
+    try:
+        input_collection = CreateCollectionSchema(title=title)
+    except ValueError as e:
+        return {"error": e.errors()[0]["msg"]}
 
     new_collection = Collection(**input_collection.model_dump())
 
@@ -88,7 +94,7 @@ async def create_collection(
 @app.patch("/update-collection/{collection_id}")
 async def update_collection(
     collection_id: int,
-    input_collection: UpdateCollectionSchema,
+    title: str = Form(""),
     db: Session = Depends(get_db_fast),
 ):
     collection_query = (
@@ -100,6 +106,11 @@ async def update_collection(
             {"message": "we do not have such this collection"},
             status.HTTP_404_NOT_FOUND,
         )
+
+    try:
+        input_collection = UpdateCollectionSchema(title=title)
+    except ValueError as e:
+        return {"error": e.errors()[0]["msg"]}
 
     collection_query.title = input_collection.model_dump().get("title")
     db.commit()
@@ -214,10 +225,45 @@ async def get_all_products(
 
 @app.post("/create-product")
 async def create_product(
-    input_product: CreateProductSchema,
+    title: str = Form(""),
+    price: int = Form(""),
+    description: str = Form(""),
+    menu: str = Form(""),
+    collection_id: int = Form(""),
+    product_image: UploadFile = File(),
     db: Session = Depends(get_db_fast),
 ):
-    pass
+    try:
+        input_product = CreateProductSchema(
+            title=title,
+            price=price,
+            description=description,
+            menu=menu,
+            collection_id=collection_id,
+        )
+    except ValueError as e:
+        return {"error": e.errors()[0]["msg"]}
+
+    file_location = f"{images_dir}/{product_image.filename}"
+
+    with open(file_location, "wb") as buffer:
+        shutil.copyfileobj(product_image.file, buffer)
+
+    product_image_path = f"static/images/{product_image.filename}"
+
+    new_product = Product(**input_product.model_dump())
+    new_product.image_path = product_image_path
+
+    db.add(new_product)
+    db.commit()
+    db.refresh(new_product)
+
+    return JSONResponse(
+        {
+            "message": f"new product with title of {new_product.title} has been created successfully",
+        },
+        status.HTTP_201_CREATED,
+    )
 
 
 if __name__ == "__main__":

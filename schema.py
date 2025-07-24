@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator, PositiveFloat
+from pydantic import BaseModel, field_validator, PositiveInt
 from dependencies import get_db_python
 from models import Collection, Product
 
@@ -52,7 +52,7 @@ class DeleteCollectionSchema(BaseModel):
 class BaseProductSchema(BaseModel):
     id: int
     title: str
-    price: PositiveFloat
+    price: PositiveInt
     description: str
     menu: str
     collection_id: int
@@ -75,7 +75,7 @@ class GetAllProductsSchema(BaseModel):
 
 class CreateProductSchema(BaseModel):
     title: str
-    price: PositiveFloat
+    price: PositiveInt
     description: str
     menu: str
     collection_id: int
@@ -89,6 +89,30 @@ class CreateProductSchema(BaseModel):
             unique_title = db.query(Product).filter(Product.title == value).first()
 
             if unique_title:
-                raise ValueError("we already have this collection in our DataBase")
+                raise ValueError("we already have this product in our DataBase")
 
+        return value
+
+    @field_validator("price")
+    def price_validator(cls, value: int):
+        if value >= 9999999999:
+            raise ValueError("the range of price is not valid")
+
+        if not isinstance(value, int):
+            raise ValueError("price must be a integer field")
+        return value
+
+    @field_validator("menu")
+    def menu_validator(cls, value: str):
+        if value not in ("casual", "special"):
+            raise ValueError("the menu choices are special and casual")
+        return value
+
+    @field_validator("collection_id")
+    def collection_id_validator(cls, value: int):
+        with get_db_python() as db:
+            exist_collection = db.query(Product).filter(Product.id == value).first()
+
+            if not exist_collection:
+                raise ValueError("we do not have this collection in our DataBase")
         return value
