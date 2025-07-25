@@ -9,9 +9,17 @@ from schema import UpdateCollectionSchema, DeleteCollectionSchema, GetCollection
 from schema import GetProductSchema, GetAllProductsSchema, CreateProductSchema
 import uvicorn
 import shutil
+import os
 
 app = FastAPI(debug=True)
 
+if not os.path.isdir("static"):
+    os.mkdir("static")
+    print("static folder created...")
+
+if not os.path.isdir("static/images"):
+    os.mkdir("static/images")
+    print("images folder created...")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 images_dir = "static/images"
