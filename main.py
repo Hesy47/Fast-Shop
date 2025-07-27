@@ -70,7 +70,7 @@ async def get_all_collections(
 
 @app.post("/create-collection")
 async def create_collection(
-    title: str = Form(),
+    title: str = Form(""),
     db: Session = Depends(get_db_fast),
 ):
     try:
@@ -122,9 +122,14 @@ async def update_collection(
 
 @app.delete("/delete-collection")
 async def delete_collection(
-    input_collection: DeleteCollectionSchema,
+    title: str = Form(""),
     db: Session = Depends(get_db_fast),
 ):
+    try:
+        input_collection = DeleteCollectionSchema(title=title)
+    except ValueError as e:
+        return {"error": e.errors()[0]["msg"]}
+
     collection_query = (
         db.query(Collection)
         .filter(Collection.title == input_collection.model_dump().get("title"))

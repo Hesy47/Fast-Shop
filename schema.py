@@ -27,6 +27,9 @@ class CreateCollectionSchema(BaseModel):
 
     @field_validator("title")
     def title_validator(cls, value: str):
+        if value.strip() is "":
+            raise ValueError("the title field is required")
+
         if not value.isalnum():
             raise ValueError("please inter a valid title")
 
