@@ -32,10 +32,7 @@ async def get_collection(
 ):
 
     collection_query = (
-        db.query(Collection)
-        .options(joinedload(Collection.products))
-        .filter(Collection.id == collection_id)
-        .first()
+        db.query(Collection).filter(Collection.id == collection_id).first()
     )
 
     if collection_query is None:
@@ -56,13 +53,7 @@ async def get_all_collections(
     total_items = db.query(Collection).count()
     skip = (page - 1) * per_page
 
-    collections_query = (
-        db.query(Collection)
-        .options(joinedload(Collection.products))
-        .offset(skip)
-        .limit(per_page)
-        .all()
-    )
+    collections_query = db.query(Collection).offset(skip).limit(per_page).all()
 
     has_next = (skip + per_page) < total_items
     has_previous = page > 1
