@@ -1,4 +1,6 @@
-from fastapi import FastAPI, Depends, Query, status, UploadFile, File, Form
+from fastapi import FastAPI, Depends, Query, status, UploadFile
+from fastapi import Request, File, Form
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from dependencies import get_db_fast
@@ -7,6 +9,7 @@ from models import Collection, Product
 from schema import GetAllCollectionsSchema, CreateCollectionSchema
 from schema import UpdateCollectionSchema, DeleteCollectionSchema, GetCollectionSchema
 from schema import GetProductSchema, GetAllProductsSchema, CreateProductSchema
+from schema import UpdateProductSchema
 import uvicorn
 import shutil
 import os
@@ -23,6 +26,23 @@ if not os.path.isdir("static/images"):
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 images_dir = "static/images"
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    full_error = exc.errors()[0]
+    error_message = full_error.get("msg", "Invalid input")
+    error_field = full_error.get("loc", ["body"])[-1]
+    user_input = full_error.get("input")
+
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={
+            "error": error_message,
+            "field": error_field,
+            "input": user_input,
+        },
+    )
 
 
 @app.get("/get-collection/{collection_id}", response_model=GetCollectionSchema)
@@ -70,14 +90,9 @@ async def get_all_collections(
 
 @app.post("/create-collection")
 async def create_collection(
-    title: str = Form(""),
+    input_collection: CreateCollectionSchema,
     db: Session = Depends(get_db_fast),
 ):
-    try:
-        input_collection = CreateCollectionSchema(title=title)
-    except ValueError as e:
-        return {"error": e.errors()[0]["msg"]}
-
     new_collection = Collection(**input_collection.model_dump())
 
     db.add(new_collection)
@@ -93,7 +108,7 @@ async def create_collection(
 @app.patch("/update-collection/{collection_id}")
 async def update_collection(
     collection_id: int,
-    title: str = Form(""),
+    title: str = Form(None),
     db: Session = Depends(get_db_fast),
 ):
     collection_query = (
@@ -109,7 +124,11 @@ async def update_collection(
     try:
         input_collection = UpdateCollectionSchema(title=title)
     except ValueError as e:
-        return {"error": e.errors()[0]["msg"]}
+        return {
+            "error": e.errors()[0]["msg"],
+            "field": e.errors()[0]["loc"][-1],
+            "input": e.errors()[0]["input"],
+        }
 
     collection_query.title = input_collection.model_dump().get("title")
     db.commit()
@@ -229,11 +248,11 @@ async def get_all_products(
 
 @app.post("/create-product")
 async def create_product(
-    title: str = Form(""),
-    price: int = Form(""),
-    description: str = Form(""),
-    menu: str = Form(""),
-    collection_id: int = Form(""),
+    title: str = Form(),
+    price: int = Form(),
+    description: str = Form(),
+    menu: str = Form(),
+    collection_id: int = Form(),
     product_image: UploadFile = File(),
     db: Session = Depends(get_db_fast),
 ):
@@ -268,6 +287,48 @@ async def create_product(
         },
         status.HTTP_201_CREATED,
     )
+
+
+@app.patch("/update-product/{product_id}")
+async def update_product(
+    product_id: int,
+    title: str = Form(None),
+    price: int = Form(None),
+    description: str = Form(None),
+    menu: str = Form(None),
+    collection_id: int = Form(None),
+    product_image: UploadFile = File(None),
+    db: Session = Depends(get_db_fast),
+):
+
+    product_query = db.query(Product).filter(Product.id == product_id).first()
+
+    if product_query is None:
+        return JSONResponse(
+            {"message": "we do not have such this product"},
+            status.HTTP_404_NOT_FOUND,
+        )
+    try:
+        input_product = UpdateProductSchema(
+            title=title,
+            price=price,
+            description=description,
+            menu=menu,
+            collection_id=collection_id,
+        )
+    except ValueError as e:
+        return {"error": e.errors()[0]["msg"]}
+
+    new_product = Product(**input_product.model_dump())
+    print(new_product.price)
+
+    if product_image:
+        file_location = f"{images_dir}/{product_image.filename}"
+
+        with open(file_location, "wb") as buffer:
+            shutil.copyfileobj(product_image.file, buffer)
+
+        product_image_path = f"static/images/{product_image.filename}"
 
 
 if __name__ == "__main__":
