@@ -5,13 +5,12 @@ from models import Collection, Product
 
 
 class BaseGetCollectionsSchema(BaseModel):
-    title: str
     id: int
+    title: str
 
 
-class GetCollectionSchema(BaseModel):
-    item: BaseGetCollectionsSchema
-    status: str
+class GetCollectionSchema(BaseGetCollectionsSchema):
+    pass
 
 
 class GetAllCollectionsSchema(BaseModel):
@@ -45,12 +44,30 @@ class CreateCollectionSchema(BaseModel):
         return value
 
 
-class UpdateCollectionSchema(CreateCollectionSchema):
-    pass
+class UpdateCollectionSchema(BaseModel):
+    title: Optional[str] = None
+
+    @field_validator("title")
+    def title_validator(cls, value: str):
+        if value is None:
+            return value
+
+        if not value.isalnum():
+            raise ValueError("please inter a valid title")
+
+        with get_db_python() as db:
+            unique_title = (
+                db.query(Collection).filter(Collection.title == value).first()
+            )
+
+            if unique_title:
+                raise ValueError("we already have this collection in our DataBase")
+
+        return value
 
 
 class DeleteCollectionSchema(BaseModel):
-    title: str
+    pass
 
 
 class BaseProductSchema(BaseModel):

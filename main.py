@@ -61,7 +61,7 @@ async def get_collection(
             status.HTTP_404_NOT_FOUND,
         )
 
-    return {"item": collection_query, "status": "200"}
+    return {"id": collection_query.id, "title": collection_query.title}
 
 
 @app.get("/get-all-collections", response_model=GetAllCollectionsSchema)
@@ -73,7 +73,13 @@ async def get_all_collections(
     total_items = db.query(Collection).count()
     skip = (page - 1) * per_page
 
-    collections_query = db.query(Collection).offset(skip).limit(per_page).all()
+    collections_query = (
+        db.query(Collection)
+        .order_by(Collection.id.asc())
+        .offset(skip)
+        .limit(per_page)
+        .all()
+    )
 
     has_next = (skip + per_page) < total_items
     has_previous = page > 1
@@ -130,7 +136,10 @@ async def update_collection(
             "input": e.errors()[0]["input"],
         }
 
-    collection_query.title = input_collection.model_dump().get("title")
+    for key, value in input_collection.model_dump().items():
+        if value is not None:
+            setattr(collection_query, key, value)
+
     db.commit()
 
     return JSONResponse(
@@ -139,20 +148,14 @@ async def update_collection(
     )
 
 
-@app.delete("/delete-collection")
+@app.delete("/delete-collection/{collection_id}")
 async def delete_collection(
-    title: str = Form(""),
+    collection_id: int,
     db: Session = Depends(get_db_fast),
 ):
-    try:
-        input_collection = DeleteCollectionSchema(title=title)
-    except ValueError as e:
-        return {"error": e.errors()[0]["msg"]}
 
     collection_query = (
-        db.query(Collection)
-        .filter(Collection.title == input_collection.model_dump().get("title"))
-        .first()
+        db.query(Collection).filter(Collection.title == collection_id).first()
     )
 
     if collection_query is None:
@@ -211,6 +214,7 @@ async def get_all_products(
 
     products_query = (
         db.query(Product)
+        .order_by(Product.id.asc())
         .options(joinedload(Product.collection))
         .offset(skip)
         .limit(per_page)
@@ -300,7 +304,6 @@ async def update_product(
     product_image: UploadFile = File(None),
     db: Session = Depends(get_db_fast),
 ):
-
     product_query = db.query(Product).filter(Product.id == product_id).first()
 
     if product_query is None:
@@ -308,6 +311,7 @@ async def update_product(
             {"message": "we do not have such this product"},
             status.HTTP_404_NOT_FOUND,
         )
+
     try:
         input_product = UpdateProductSchema(
             title=title,
@@ -319,9 +323,6 @@ async def update_product(
     except ValueError as e:
         return {"error": e.errors()[0]["msg"]}
 
-    new_product = Product(**input_product.model_dump())
-    print(new_product.price)
-
     if product_image:
         file_location = f"{images_dir}/{product_image.filename}"
 
@@ -329,6 +330,18 @@ async def update_product(
             shutil.copyfileobj(product_image.file, buffer)
 
         product_image_path = f"static/images/{product_image.filename}"
+        product_query.image_path = product_image_path
+
+    for key, value in input_product.model_dump().items():
+        if value is not None:
+            setattr(product_query, key, value)
+
+    db.commit()
+
+    return JSONResponse(
+        {"message": "the product updated successfully"},
+        status.HTTP_202_ACCEPTED,
+    )
 
 
 if __name__ == "__main__":
