@@ -7,7 +7,7 @@ from dependencies import get_db_fast
 from sqlalchemy.orm import Session, joinedload
 from models import Collection, Product
 from schema import GetAllCollectionsSchema, CreateCollectionSchema
-from schema import UpdateCollectionSchema, DeleteCollectionSchema, GetCollectionSchema
+from schema import UpdateCollectionSchema, GetCollectionSchema
 from schema import GetProductSchema, GetAllProductsSchema, CreateProductSchema
 from schema import UpdateProductSchema
 import uvicorn
