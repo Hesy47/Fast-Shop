@@ -129,6 +129,7 @@ async def update_collection(
 
     try:
         input_collection = UpdateCollectionSchema(title=title)
+
     except ValueError as e:
         return {
             "error": e.errors()[0]["msg"],
@@ -155,7 +156,7 @@ async def delete_collection(
 ):
 
     collection_query = (
-        db.query(Collection).filter(Collection.title == collection_id).first()
+        db.query(Collection).filter(Collection.id == collection_id).first()
     )
 
     if collection_query is None:
@@ -269,7 +270,11 @@ async def create_product(
             collection_id=collection_id,
         )
     except ValueError as e:
-        return {"error": e.errors()[0]["msg"]}
+        return {
+            "error": e.errors()[0]["msg"],
+            "field": e.errors()[0]["loc"][-1],
+            "input": e.errors()[0]["input"],
+        }
 
     file_location = f"{images_dir}/{product_image.filename}"
 
@@ -321,7 +326,11 @@ async def update_product(
             collection_id=collection_id,
         )
     except ValueError as e:
-        return {"error": e.errors()[0]["msg"]}
+        return {
+            "error": e.errors()[0]["msg"],
+            "field": e.errors()[0]["loc"][-1],
+            "input": e.errors()[0]["input"],
+        }
 
     if product_image:
         file_location = f"{images_dir}/{product_image.filename}"

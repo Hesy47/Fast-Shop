@@ -132,7 +132,9 @@ class CreateProductSchema(BaseModel):
     @field_validator("collection_id")
     def collection_id_validator(cls, value: int):
         with get_db_python() as db:
-            exist_collection = db.query(Product).filter(Product.id == value).first()
+            exist_collection = (
+                db.query(Collection).filter(Collection.id == value).first()
+            )
 
             if not exist_collection:
                 raise ValueError("we do not have this collection in our DataBase")
