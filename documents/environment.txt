@@ -1,0 +1,5 @@
+DEBUG=True or false
+DATABASE_URL=postgresql+asyncpg://user:password@host/dbname
+
+JWT_ACCESS_TOKEN_SECRET= token_urlsafe() or use terminal.py
+JWT_REFRESH_TOKEN_SECRET= token_urlsafe() or use terminal.py
