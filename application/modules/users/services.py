@@ -3,9 +3,14 @@ from fastapi.responses import JSONResponse
 
 from application.core.hashers import CustomArgon2Hasher
 from application.core.tokens import CustomJWTAuthentication
+from application.modules.users.pagination import CustomUserPaginationResponse
 from application.modules.users.repository import UserRepository
-from application.modules.users.schemas import BasicLoginRequest, GetAllUsersResponse
-from application.shared.pagination import CustomPaginationResponse
+from application.modules.users.schemas import (
+    BasicLoginRequest,
+    CreateUserRequest,
+    EditUserRequest,
+    GetAllUsersResponse,
+)
 
 
 class UserServices:
@@ -63,7 +68,7 @@ class UserServices:
         users_repository = await self.repo.get_all_users_repository(
             limit, offset, order_by, search
         )
-        paginated_responses = CustomPaginationResponse(
+        paginated_responses = CustomUserPaginationResponse(
             page, per_page, limit, offset, base_url, route_path, total_users_repository
         )
 
@@ -86,4 +91,81 @@ class UserServices:
                 }
                 for user in users_repository
             ],
+        )
+
+    async def create_user_service(self, payload: CreateUserRequest):
+        if await self.repo.check_unique_username_repository_for_create(
+            payload.username
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "field": "username",
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "type": "value_error",
+                    "error": "This username is already taken",
+                },
+            )
+
+        if await self.repo.check_unique_phone_number_repository_for_create(
+            payload.phone_number
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "field": "phone_number",
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "type": "value_error",
+                    "error": "This phone number is already taken",
+                },
+            )
+
+        await self.repo.create_user_repository(payload)
+
+        return JSONResponse(
+            content={"message": "New user created successfully"},
+            status_code=status.HTTP_201_CREATED,
+        )
+
+    async def edit_user_service(self, payload: EditUserRequest, user_id: int):
+        if payload.username:
+            if await self.repo.check_unique_username_repository_for_edit(
+                payload.username, user_id
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={
+                        "field": "username",
+                        "status": status.HTTP_400_BAD_REQUEST,
+                        "type": "value_error",
+                        "error": "This username is already taken",
+                    },
+                )
+
+        if payload.phone_number:
+            if await self.repo.check_unique_phone_number_repository_for_edit(
+                payload.phone_number, user_id
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={
+                        "field": "phone_number",
+                        "status": status.HTTP_400_BAD_REQUEST,
+                        "type": "value_error",
+                        "error": "This phone number is already taken",
+                    },
+                )
+
+        await self.repo.edit_user_repository(payload, user_id)
+
+        return JSONResponse(
+            content={"message": "User updated successfully"},
+            status_code=status.HTTP_200_OK,
+        )
+
+    async def delete_user_service(self, user_id: int):
+        await self.repo.delete_user_repository(user_id)
+        return JSONResponse(
+            content={"message": "User has been deleted successfully"},
+            status_code=status.HTTP_200_OK,
         )

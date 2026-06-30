@@ -2,7 +2,7 @@ from fastapi import Query
 from math import ceil
 
 
-class CustomPaginationParams:
+class CustomUserPaginationParams:
     def __init__(
         self,
         page: int = Query(default=1, ge=1),
@@ -24,9 +24,9 @@ class CustomPaginationParams:
         return (self.page - 1) * self.per_page
 
 
-class CustomPaginationResponse:
+class CustomUserPaginationResponse:
     def __init__(
-        self, page, per_page, limit, offset, base_url, route_path, total_users
+        self, page, per_page, limit, offset, base_url, route_path, total_items
     ):
         self.page = page
         self.per_page = per_page
@@ -34,7 +34,7 @@ class CustomPaginationResponse:
         self.offset = offset
         self.base_url = base_url
         self.route_path = route_path
-        self.total_users = total_users
+        self.total_items = total_items
 
     def the_previous(self):
         has_previous = self.offset > 0
@@ -45,7 +45,7 @@ class CustomPaginationResponse:
         )
 
     def the_next(self):
-        has_next = self.offset + self.limit < self.total_users
+        has_next = self.offset + self.limit < self.total_items
         return (
             f"{self.base_url}{self.route_path}/?page={self.page+1}"
             if has_next
@@ -53,4 +53,4 @@ class CustomPaginationResponse:
         )
 
     def total_pages(self):
-        return ceil(self.total_users / self.per_page)
+        return ceil(self.total_items / self.per_page)
