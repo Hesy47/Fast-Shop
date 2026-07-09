@@ -9,3 +9,4 @@ pyJWT
 jdatetime
 aiofiles
 python-magic
+tzdata
