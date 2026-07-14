@@ -1,10 +1,27 @@
+from contextlib import asynccontextmanager
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+from fastapi.staticfiles import StaticFiles
+
 from application.modules.users.routes import user_router
 from application.shared.exceptions import CustomExceptionsHandlers
+from application.shared.storage import DiskManager
 
-app = FastAPI()
+
+@asynccontextmanager
+async def startup_events(app: FastAPI):
+    print("Application events starting...")
+
+    await DiskManager.create_application_folders()
+    app.mount("/media", StaticFiles(directory="media"), name="media")
+
+    yield
+    print("Application events ended...")
+
+
+app = FastAPI(lifespan=startup_events)
 
 app.include_router(user_router)
 
