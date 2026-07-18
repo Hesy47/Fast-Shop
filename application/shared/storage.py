@@ -37,20 +37,26 @@ class DiskManager:
         formatted_path.append(filename)
 
         formatted_image = "/".join(formatted_path)
+        print(formatted_image)
         return formatted_image
 
     @staticmethod
-    def image_processor_for_route(image_file: bytes):
+    def image_processor_for_route(
+        image_file: bytes,
+        width: int = 1024,
+        height: int = 1024,
+        quality: int = 90,
+    ):
         original_image = Image.open(BytesIO(image_file))
 
-        if original_image.width > 1024 or original_image.height > 1024:
-            original_image.thumbnail((1024, 1024))
+        if original_image.width > width or original_image.height > height:
+            original_image.thumbnail((width, height))
 
         if original_image.mode in ("RGBA", "LA", "P"):
             original_image.convert("RGBA")
 
         buffer = BytesIO()
-        original_image.save(buffer, format="WEBP", quality=85, optimized=True)
+        original_image.save(buffer, format="WEBP", quality=quality, optimized=True)
         buffer.seek(0)
 
         return buffer.getvalue()

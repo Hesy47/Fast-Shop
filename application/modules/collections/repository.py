@@ -9,8 +9,62 @@ from application.modules.collections.schemas import (
 
 
 class CollectionRepository:
+    VALID_ORDERING_CHOICES = {"id": asc(Collection.id), "-id": desc(Collection.id)}
+
     def __init__(self, session: AsyncSession):
         self.session = session
+
+    async def get_collection_repository(self, collection_id: int):
+        get_query = select(
+            Collection.id,
+            Collection.title,
+            Collection.image,
+            Collection.created_at,
+            Collection.updated_at,
+        ).where(Collection.id == collection_id)
+
+        get_operation = await self.session.execute(get_query)
+        get_result = get_operation.first()
+
+        return get_result
+
+    async def count_all_collections(self, search):
+        total_collection_query = select(func.count(Collection.id))
+
+        if search:
+            total_collection_query = total_collection_query.where(
+                Collection.title.ilike(f"%{search}%")
+            )
+
+        total_collection_operation = await self.session.execute(total_collection_query)
+        total_collection_result = total_collection_operation.first()
+
+        return total_collection_result[0]
+
+    async def valid_order_by(self, order_by):
+        return order_by in self.VALID_ORDERING_CHOICES
+
+    async def get_all_collections_repository(self, limit, offset, order_by, search):
+        get_all_query = (
+            select(
+                Collection.id,
+                Collection.title,
+                Collection.image,
+                Collection.created_at,
+                Collection.updated_at,
+            )
+            .limit(limit)
+            .offset(offset)
+            .order_by(self.VALID_ORDERING_CHOICES.get(order_by))
+        )
+
+        if search:
+            get_all_query = get_all_query.where(Collection.title.ilike(f"%{search}%"))
+
+        get_all_operation = await self.session.execute(get_all_query)
+        get_all_results = get_all_operation.all()
+
+        return get_all_results
 
     async def check_is_unique_title_repository_for_create(self, title: str):
         is_unique_query = select(Collection.id).where(Collection.title == title)

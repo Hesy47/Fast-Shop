@@ -66,3 +66,6 @@ class User(Base):
         server_default=func.now(),
         server_onupdate=func.now(),
     )
+
+    def __str__(self):
+        return self.username

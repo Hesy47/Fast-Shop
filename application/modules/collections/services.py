@@ -1,11 +1,18 @@
-from fastapi import BackgroundTasks, File, HTTPException, UploadFile, status
+from fastapi import BackgroundTasks, File, HTTPException, Request, UploadFile, status
 from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 
+from application.modules.collections.pagination import (
+    CustomCollectionPaginationResponse,
+)
 from application.modules.collections.repository import CollectionRepository
 from application.modules.collections.schemas import (
     CreateCollectionRequest,
     EditCollectionRequest,
+    GetAllCollectionsResponse,
+    GetCollectionResponse,
 )
+from application.shared.exceptions import CustomExceptionsHandlers
 from application.shared.storage import DiskManager
 
 
@@ -13,10 +20,79 @@ class CollectionServices:
     def __init__(self, repo: CollectionRepository):
         self.repo = repo
 
-    async def create_collection_service(
-        self, payload: CreateCollectionRequest, bg: BackgroundTasks, file: UploadFile
+    async def get_collection_service(self, collection_id: int, request: Request):
+        collection_repository = await self.repo.get_collection_repository(collection_id)
+
+        if not collection_repository:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="We do not have such this collection",
+            )
+
+        return GetCollectionResponse(
+            id=collection_repository.id,
+            title=collection_repository.title,
+            image=f"{request.base_url}{DiskManager.COLLECTIONS_SAVE_PATH}{collection_repository.image}",
+            created_at=collection_repository.created_at,
+            updated_at=collection_repository.updated_at,
+        )
+
+    async def get_all_collections_service(
+        self,
+        page,
+        per_page,
+        order_by,
+        search,
+        limit,
+        offset,
+        request: Request,
+        route_path,
     ):
-        if await self.repo.check_is_unique_title_repository_for_create(payload.title):
+        if not await self.repo.valid_order_by(order_by):
+            raise HTTPException(
+                detail=f"valid order_by choices are: {list(self.repo.VALID_ORDERING_CHOICES.keys())}",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        total_collection_repository = await self.repo.count_all_collections(search)
+        collection_repository = await self.repo.get_all_collections_repository(
+            limit, offset, order_by, search
+        )
+        paginated_responses = CustomCollectionPaginationResponse(
+            page,
+            per_page,
+            limit,
+            offset,
+            request.base_url,
+            route_path,
+            total_collection_repository,
+        )
+
+        return GetAllCollectionsResponse(
+            count=total_collection_repository,
+            next=paginated_responses.the_next(),
+            previous=paginated_responses.the_previous(),
+            total_pages=paginated_responses.total_pages(),
+            current_page=page,
+            results=[
+                {
+                    "id": collection.id,
+                    "title": collection.title,
+                    "image": f"{request.base_url}{DiskManager.COLLECTIONS_SAVE_PATH}{collection.image}",
+                    "created_at": collection.created_at,
+                    "updated_at": collection.updated_at,
+                }
+                for collection in collection_repository
+            ],
+        )
+
+    async def create_collection_service(
+        self,
+        title: str,
+        image: UploadFile,
+        bg: BackgroundTasks,
+    ):
+        if await self.repo.check_is_unique_title_repository_for_create(title):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail={
@@ -27,9 +103,11 @@ class CollectionServices:
                 },
             )
 
-        image_filename = DiskManager.image_title_webp_convertor_for_route(file.filename)
+        image_filename = DiskManager.image_title_webp_convertor_for_route(
+            image.filename
+        )
 
-        if await self.repo.check_is_unique_image_repository_for_create(payload.image):
+        if await self.repo.check_is_unique_image_repository_for_create(image_filename):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail={
@@ -40,13 +118,18 @@ class CollectionServices:
                 },
             )
 
+        try:
+            payload = CreateCollectionRequest(title=title, image=image_filename)
+        except ValidationError as error:
+            await CustomExceptionsHandlers.pydantic_validation_handler_for_route(error)
+
         await self.repo.create_collection_repository(payload)
 
-        image_file = await file.read()
+        image_file = await image.read()
 
         bg.add_task(
             DiskManager.upload_image_for_route,
-            DiskManager.image_processor_for_route(image_file),
+            DiskManager.image_processor_for_route(image_file, quality=85),
             f"{DiskManager.COLLECTIONS_SAVE_PATH}{image_filename}",
         )
 
