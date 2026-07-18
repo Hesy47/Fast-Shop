@@ -85,3 +85,48 @@ class CollectionRepository:
 
         self.session.add(new_collection)
         await self.session.commit()
+
+    async def check_is_unique_title_repository_for_edit(
+        self,
+        title: str,
+        collection_id: int,
+    ):
+        is_unique_query = select(Collection.id).where(
+            and_(Collection.title == title, Collection.id != collection_id)
+        )
+        is_unique_operation = await self.session.execute(is_unique_query)
+        is_unique_result = is_unique_operation.first()
+
+        return is_unique_result
+
+    async def check_is_unique_image_repository_for_update(self, image: str):
+        is_unique_query = select(Collection.id).where(Collection.image == image)
+        is_unique_operation = await self.session.execute(is_unique_query)
+        is_unique_result = is_unique_operation.first()
+
+        return is_unique_result
+
+    async def edit_collection_repository(
+        self, payload: EditCollectionRequest, collection_id: int
+    ):
+        updated_collection_data = payload.model_dump(
+            exclude_none=True,
+            exclude_unset=True,
+        )
+
+        update_collection_query = (
+            update(Collection)
+            .where(Collection.id == collection_id)
+            .values(**updated_collection_data)
+        )
+
+        await self.session.execute(update_collection_query)
+        await self.session.commit()
+
+    async def delete_collection_repository(self, collection_id: int):
+        collection_delete_query = delete(Collection).where(
+            Collection.id == collection_id
+        )
+
+        await self.session.execute(collection_delete_query)
+        await self.session.commit()

@@ -108,7 +108,7 @@ async def edit_user(
     tags=["User-Administration"],
     dependencies=[Depends(CustomPermissions.is_admin)],
 )
-async def edit_user(
+async def delete_user(
     user_id: int = Depends(check_user_existence_by_id_dp),
     services: UserServices = Depends(
         user_services_dp,

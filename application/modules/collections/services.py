@@ -134,6 +134,76 @@ class CollectionServices:
         )
 
         return JSONResponse(
-            content={"message": "New user created successfully"},
+            content={"message": "New collection created successfully"},
             status_code=status.HTTP_201_CREATED,
+        )
+
+    async def edit_collection_service(
+        self,
+        title: str,
+        image: UploadFile,
+        collection_id: int,
+        bg: BackgroundTasks,
+    ):
+        if title:
+            if await self.repo.check_is_unique_title_repository_for_edit(
+                title,
+                collection_id,
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={
+                        "field": "title",
+                        "status": status.HTTP_400_BAD_REQUEST,
+                        "type": "value_error",
+                        "error": "This title is already taken",
+                    },
+                )
+
+        if image:
+            image_filename = DiskManager.image_title_webp_convertor_for_route(
+                image.filename
+            )
+
+            if await self.repo.check_is_unique_image_repository_for_update(
+                image_filename,
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={
+                        "field": "image",
+                        "status": status.HTTP_400_BAD_REQUEST,
+                        "type": "value_error",
+                        "error": "This image is already taken",
+                    },
+                )
+        else:
+            image_filename = None
+
+        try:
+            payload = EditCollectionRequest(title=title, image=image_filename)
+        except ValidationError as error:
+            await CustomExceptionsHandlers.pydantic_validation_handler_for_route(error)
+
+        await self.repo.edit_collection_repository(payload, collection_id)
+
+        if image:
+            image_file = await image.read()
+
+            bg.add_task(
+                DiskManager.upload_image_for_route,
+                DiskManager.image_processor_for_route(image_file, quality=85),
+                f"{DiskManager.COLLECTIONS_SAVE_PATH}{image_filename}",
+            )
+
+        return JSONResponse(
+            content={"message": "collection updated successfully"},
+            status_code=status.HTTP_200_OK,
+        )
+
+    async def delete_collection_service(self, collection_id: int):
+        await self.repo.delete_collection_repository(collection_id)
+        return JSONResponse(
+            content={"message": "Collection has been deleted successfully"},
+            status_code=status.HTTP_200_OK,
         )

@@ -1,9 +1,12 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Request, UploadFile
 
 from application.core.permissions import CustomPermissions
-from application.modules.collections.dependencies import collection_services_dp
-from application.modules.collections.services import CollectionServices
+from application.modules.collections.dependencies import (
+    check_collection_existence_by_id_dp,
+    collection_services_dp,
+)
 from application.modules.collections.pagination import CustomCollectionPaginationParams
+from application.modules.collections.services import CollectionServices
 
 collection_router = APIRouter(prefix="/api")
 
@@ -59,3 +62,34 @@ async def create_collection(
 ):
 
     return await service.create_collection_service(title, image, bg)
+
+
+@collection_router.patch(
+    path="/edit_collection/{collection_id:int}",
+    tags=["Collection-Administration"],
+    dependencies=[Depends(CustomPermissions.is_admin)],
+)
+async def edit_collection(
+    bg: BackgroundTasks,
+    collection_id: int = Depends(check_collection_existence_by_id_dp),
+    title: str | None = Form(None),
+    image: UploadFile | None = File(None),
+    services: CollectionServices = Depends(
+        collection_services_dp,
+    ),
+):
+    return await services.edit_collection_service(title, image, collection_id, bg)
+
+
+@collection_router.delete(
+    path="/delete_collection/{collection_id:int}",
+    tags=["Collection-Administration"],
+    dependencies=[Depends(CustomPermissions.is_admin)],
+)
+async def delete_collection(
+    collection_id: int = Depends(check_collection_existence_by_id_dp),
+    services: CollectionServices = Depends(
+        collection_services_dp,
+    ),
+):
+    return await services.delete_collection_service(collection_id)
