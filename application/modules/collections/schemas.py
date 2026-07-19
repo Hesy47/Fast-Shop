@@ -11,8 +11,10 @@ class PublicGetCollectionResponse(BaseModel):
 
 
 class PublicGetAllCollectionsResponse(BaseModel):
+    count: int
     next: str | None
     previous: str | None
+    total_pages: int
     current_page: int
     results: list[PublicGetCollectionResponse]
 
