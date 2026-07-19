@@ -11,6 +11,8 @@ from application.modules.collections.schemas import (
     EditCollectionRequest,
     GetAllCollectionsResponse,
     GetCollectionResponse,
+    PublicGetAllCollectionsResponse,
+    PublicGetCollectionResponse,
 )
 from application.shared.exceptions import CustomExceptionsHandlers
 from application.shared.storage import DiskManager
@@ -19,6 +21,70 @@ from application.shared.storage import DiskManager
 class CollectionServices:
     def __init__(self, repo: CollectionRepository):
         self.repo = repo
+
+    async def public_get_collection_service(self, collection_id: int, request: Request):
+        collection_repository = await self.repo.public_get_collection_repository(
+            collection_id
+        )
+
+        if not collection_repository:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="We do not have such this collection",
+            )
+
+        return PublicGetCollectionResponse(
+            id=collection_repository.id,
+            title=collection_repository.title,
+            image=f"{request.base_url}{DiskManager.COLLECTIONS_SAVE_PATH}{collection_repository.image}",
+        )
+
+    async def public_get_all_collections_service(
+        self,
+        page,
+        per_page,
+        order_by,
+        search,
+        limit,
+        offset,
+        request: Request,
+        route_path,
+    ):
+        if not await self.repo.valid_order_by(order_by):
+            raise HTTPException(
+                detail=f"valid order_by choices are: {list(self.repo.VALID_ORDERING_CHOICES.keys())}",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        total_collection_repository = await self.repo.count_all_collections(search)
+        collection_repository = await self.repo.get_all_collections_repository(
+            limit, offset, order_by, search
+        )
+        paginated_responses = CustomCollectionPaginationResponse(
+            page,
+            per_page,
+            limit,
+            offset,
+            request.base_url,
+            route_path,
+            total_collection_repository,
+        )
+
+        return PublicGetAllCollectionsResponse(
+            count=total_collection_repository,
+            next=paginated_responses.the_next(),
+            previous=paginated_responses.the_previous(),
+            total_pages=paginated_responses.total_pages(),
+            current_page=page,
+            results=[
+                {
+                    "id": collection.id,
+                    "title": collection.title,
+                    "image": f"{request.base_url}{DiskManager.COLLECTIONS_SAVE_PATH}{collection.image}",
+                }
+                for collection in collection_repository
+            ],
+        )
 
     async def get_collection_service(self, collection_id: int, request: Request):
         collection_repository = await self.repo.get_collection_repository(collection_id)

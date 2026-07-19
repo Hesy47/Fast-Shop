@@ -12,7 +12,43 @@ collection_router = APIRouter(prefix="/api")
 
 
 @collection_router.get(
-    path="/get-collection",
+    path="/collections/{id:int}",
+    tags=["Collection-Public"],
+)
+async def public_get_collection(
+    request: Request,
+    id: int,
+    service: CollectionServices = Depends(collection_services_dp),
+):
+    return await service.public_get_collection_service(id, request)
+
+
+@collection_router.get(
+    path="/collections",
+    tags=["Collection-Public"],
+)
+async def public_get_all_collections(
+    request: Request,
+    params: CustomCollectionPaginationParams = Depends(),
+    services: CollectionServices = Depends(
+        collection_services_dp,
+    ),
+):
+
+    return await services.get_all_collections_service(
+        params.page,
+        params.per_page,
+        params.ordering,
+        params.search,
+        params.limit,
+        params.offset,
+        request,
+        "api/collections",
+    )
+
+
+@collection_router.get(
+    path="/get-collection/{collection_id:int}",
     tags=["Collection-Administration"],
     dependencies=[Depends(CustomPermissions.is_admin)],
 )

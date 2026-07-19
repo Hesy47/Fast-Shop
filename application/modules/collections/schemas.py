@@ -4,6 +4,19 @@ import jdatetime
 from pydantic import BaseModel, field_serializer, field_validator, model_validator
 
 
+class PublicGetCollectionResponse(BaseModel):
+    id: int
+    title: str
+    image: str
+
+
+class PublicGetAllCollectionsResponse(BaseModel):
+    next: str | None
+    previous: str | None
+    current_page: int
+    results: list[PublicGetCollectionResponse]
+
+
 class GetCollectionResponse(BaseModel):
     id: int
     title: str

@@ -14,6 +14,41 @@ class CollectionRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    async def public_get_collection_repository(self, collection_id: int):
+        get_query = select(
+            Collection.id,
+            Collection.title,
+            Collection.image,
+        ).where(Collection.id == collection_id)
+
+        get_operation = await self.session.execute(get_query)
+        get_result = get_operation.first()
+
+        return get_result
+
+    async def public_get_all_collections_repository(
+        self, limit, offset, order_by, search
+    ):
+
+        get_all_query = (
+            select(
+                Collection.id,
+                Collection.title,
+                Collection.image,
+            )
+            .limit(limit)
+            .offset(offset)
+            .order_by(self.VALID_ORDERING_CHOICES.get(order_by))
+        )
+
+        if search:
+            get_all_query = get_all_query.where(Collection.title.ilike(f"%{search}%"))
+
+        get_all_operation = await self.session.execute(get_all_query)
+        get_all_results = get_all_operation.all()
+
+        return get_all_results
+
     async def get_collection_repository(self, collection_id: int):
         get_query = select(
             Collection.id,
