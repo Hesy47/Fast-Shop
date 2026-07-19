@@ -35,7 +35,7 @@ async def public_get_all_collections(
     ),
 ):
 
-    return await services.get_all_collections_service(
+    return await services.public_get_all_collections_service(
         params.page,
         params.per_page,
         params.ordering,

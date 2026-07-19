@@ -50,6 +50,12 @@ class CollectionServices:
         request: Request,
         route_path,
     ):
+        if per_page > 20:
+            raise HTTPException(
+                detail="maximum item per page is 20",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
         if not await self.repo.valid_order_by(order_by):
             raise HTTPException(
                 detail=f"valid order_by choices are: {list(self.repo.VALID_ORDERING_CHOICES.keys())}",
