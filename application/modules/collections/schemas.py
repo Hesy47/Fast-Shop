@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import jdatetime
-from pydantic import BaseModel, field_serializer, field_validator, model_validator
+from pydantic import BaseModel, field_serializer
 
 
 class PublicGetCollectionResponse(BaseModel):
@@ -23,6 +23,14 @@ class GetCollectionResponse(BaseModel):
     image: str
     created_at: datetime
     updated_at: datetime
+
+    @field_serializer("created_at", mode="plain")
+    def created_at_serializer(value: datetime):
+        return str(jdatetime.datetime.fromgregorian(datetime=value))
+
+    @field_serializer("updated_at", mode="plain")
+    def updated_at_serializer(value: datetime):
+        return str(jdatetime.datetime.fromgregorian(datetime=value))
 
 
 class GetAllCollectionsResponse(BaseModel):
