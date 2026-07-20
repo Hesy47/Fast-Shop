@@ -63,7 +63,7 @@ class CollectionServices:
             )
 
         total_collection_repository = await self.repo.count_all_collections(search)
-        collection_repository = await self.repo.get_all_collections_repository(
+        collection_repository = await self.repo.public_get_all_collections_repository(
             limit, offset, order_by, search
         )
         paginated_responses = CustomCollectionPaginationResponse(
