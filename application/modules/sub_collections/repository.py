@@ -150,7 +150,7 @@ class SubCollectionRepository:
 
         return is_unique_result
 
-    async def check_is_unique_image_repository_for_update(self, image: str):
+    async def check_is_unique_image_repository_for_edit(self, image: str):
         is_unique_query = select(SubCollection.id).where(SubCollection.image == image)
         is_unique_operation = await self.session.execute(is_unique_query)
         is_unique_result = is_unique_operation.first()

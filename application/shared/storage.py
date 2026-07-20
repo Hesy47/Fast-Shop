@@ -18,6 +18,7 @@ class DiskManager:
     ]
 
     COLLECTIONS_SAVE_PATH = "media/images/collections/"
+    SUB_COLLECTIONS_SAVE_PATH = "media/images/sub-collections/"
 
     @classmethod
     async def create_folder(cls, folder_path: str) -> None:
