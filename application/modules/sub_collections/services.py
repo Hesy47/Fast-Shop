@@ -101,7 +101,7 @@ class SubCollectionServices:
     async def get_sub_collection_service(
         self, sub_collection_id: int, request: Request
     ):
-        sub_collection_repository = await self.repo.get_collection_repository(
+        sub_collection_repository = await self.repo.get_sub_collection_repository(
             sub_collection_id
         )
 
@@ -176,6 +176,17 @@ class SubCollectionServices:
         image: UploadFile,
         bg: BackgroundTasks,
     ):
+        if not int(image.size) > 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "field": "image",
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "type": "missing",
+                    "error": "Field is required",
+                },
+            )
+
         if await self.repo.check_is_unique_title_repository_for_create(title):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -229,6 +240,7 @@ class SubCollectionServices:
         sub_collection_id: int,
         bg: BackgroundTasks,
     ):
+
         if title:
             if await self.repo.check_is_unique_title_repository_for_edit(
                 title,
@@ -244,7 +256,7 @@ class SubCollectionServices:
                     },
                 )
 
-        if image:
+        if int(image.size) > 0:
             image_filename = DiskManager.image_title_webp_convertor_for_route(
                 image.filename
             )
@@ -271,7 +283,7 @@ class SubCollectionServices:
 
         await self.repo.edit_sub_collection_repository(payload, sub_collection_id)
 
-        if image:
+        if int(image.size) > 0:
             image_file = await image.read()
 
             bg.add_task(

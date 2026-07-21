@@ -164,6 +164,17 @@ class CollectionServices:
         image: UploadFile,
         bg: BackgroundTasks,
     ):
+        if not int(image.size) > 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "field": "image",
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "type": "missing",
+                    "error": "Field is required",
+                },
+            )
+
         if await self.repo.check_is_unique_title_repository_for_create(title):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -232,7 +243,7 @@ class CollectionServices:
                     },
                 )
 
-        if image:
+        if int(image.size) > 0:
             image_filename = DiskManager.image_title_webp_convertor_for_route(
                 image.filename
             )
@@ -259,7 +270,7 @@ class CollectionServices:
 
         await self.repo.edit_collection_repository(payload, collection_id)
 
-        if image:
+        if int(image.size) > 0:
             image_file = await image.read()
 
             bg.add_task(

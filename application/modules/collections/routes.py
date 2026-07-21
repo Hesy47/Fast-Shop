@@ -101,7 +101,7 @@ async def create_collection(
 
 
 @collection_router.patch(
-    path="/edit_collection/{collection_id:int}",
+    path="/edit-collection/{collection_id:int}",
     tags=["Collection-Administration"],
     dependencies=[Depends(CustomPermissions.is_admin)],
 )
@@ -118,7 +118,7 @@ async def edit_collection(
 
 
 @collection_router.delete(
-    path="/delete_collection/{collection_id:int}",
+    path="/delete-collection/{collection_id:int}",
     tags=["Collection-Administration"],
     dependencies=[Depends(CustomPermissions.is_admin)],
 )
