@@ -15,6 +15,12 @@ class ProductServices:
     def __init__(self, repo: ProductRepository):
         self.repo = repo
 
+    @staticmethod
+    def calculate_discount_percent(price: int, discounted_price: int) -> int:
+        if price == 0:
+            return 0
+        return int((price - discounted_price) / price * 100)
+
     async def get_product_service(self, product_id: int):
         product_repository = await self.repo.get_product_repository(product_id)
 
@@ -24,7 +30,13 @@ class ProductServices:
                 detail="We do not have such this product",
             )
 
-        return GetProductResponse(**product_repository._mapping)
+        return GetProductResponse(
+            discount_percent=self.calculate_discount_percent(
+                product_repository.price,
+                product_repository.discounted_price,
+            ),
+            **product_repository._mapping,
+        )
 
     async def get_all_products_service(
         self,
@@ -66,7 +78,16 @@ class ProductServices:
             previous=paginated_responses.the_previous(),
             total_pages=paginated_responses.total_pages(),
             current_page=page,
-            results=[GetProductResponse(**product._mapping) for product in products],
+            results=[
+                GetProductResponse(
+                    discount_percent=self.calculate_discount_percent(
+                        product.price,
+                        product.discounted_price,
+                    ),
+                    **product._mapping,
+                )
+                for product in products
+            ],
         )
 
     async def create_product_service(
