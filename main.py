@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from application.modules.users.routes import user_router
 from application.modules.collections.routes import collection_router
 from application.modules.sub_collections.routes import sub_collection_router
+from application.modules.products.routes import product_router
 from application.shared.exceptions import CustomExceptionsHandlers
 from application.shared.storage import DiskManager
 
@@ -28,6 +29,7 @@ app = FastAPI(lifespan=startup_events)
 app.include_router(user_router)
 app.include_router(collection_router)
 app.include_router(sub_collection_router)
+app.include_router(product_router)
 
 app.add_exception_handler(
     RequestValidationError, CustomExceptionsHandlers.pydantic_validation_handler

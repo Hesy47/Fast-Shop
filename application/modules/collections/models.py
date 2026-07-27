@@ -1,9 +1,13 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, DateTime, String, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from application.core.database import Base
+
+if TYPE_CHECKING:
+    from application.modules.products.models import Product
 
 
 class Collection(Base):
@@ -41,6 +45,11 @@ class Collection(Base):
         onupdate=datetime.now,
         server_default=func.now(),
         server_onupdate=func.now(),
+    )
+
+    products: Mapped[list[Product]] = relationship(
+        "Product",
+        back_populates="collection",
     )
 
     def __str__(self):

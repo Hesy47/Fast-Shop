@@ -1,10 +1,24 @@
 from datetime import datetime
 from enum import Enum as PythonEnum
+from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, DateTime, Integer, SmallInteger, String, Text, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import (
+    BigInteger,
+    DateTime,
+    Enum,
+    Integer,
+    String,
+    Text,
+    func,
+    ForeignKey,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from application.core.database import Base
+
+if TYPE_CHECKING:
+    from application.modules.collections.models import Collection
+    from application.modules.sub_collections.models import SubCollection
 
 
 class StatusType(str, PythonEnum):
@@ -57,10 +71,40 @@ class Product(Base):
         nullable=False,
     )
 
+    status: Mapped[str] = mapped_column(
+        Enum(StatusType),
+        nullable=False,
+        default=StatusType.available,
+    )
+
+    menu: Mapped[str] = mapped_column(
+        Enum(MenuType),
+        nullable=False,
+        default=MenuType.casual,
+    )
+
+    scroll: Mapped[str] = mapped_column(
+        Enum(ScrollType),
+        nullable=False,
+        default=ScrollType.none,
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.now,
         server_default=func.now(),
+    )
+
+    collection_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("collections.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    sub_collection_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("sub_collections.id", ondelete="SET NULL"),
+        nullable=True,
     )
 
     updated_at: Mapped[datetime] = mapped_column(
@@ -69,6 +113,16 @@ class Product(Base):
         onupdate=datetime.now,
         server_default=func.now(),
         server_onupdate=func.now(),
+    )
+
+    collection: Mapped[Collection] = relationship(
+        "Collection",
+        back_populates="products",
+    )
+
+    sub_collection: Mapped[SubCollection] = relationship(
+        "SubCollection",
+        back_populates="products",
     )
 
     def __str__(self):
