@@ -20,7 +20,6 @@ class User(Base):
         primary_key=True,
         autoincrement=True,
         nullable=False,
-        unique=True,
     )
 
     username: Mapped[str] = mapped_column(

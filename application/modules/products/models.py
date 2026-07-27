@@ -47,7 +47,6 @@ class Product(Base):
         primary_key=True,
         autoincrement=True,
         nullable=False,
-        unique=True,
     )
 
     title: Mapped[str] = mapped_column(
@@ -125,5 +124,55 @@ class Product(Base):
         back_populates="products",
     )
 
+    images: Mapped[list[ProductImage]] = relationship(
+        "ProductImage",
+        back_populates="product",
+    )
+
     def __str__(self):
         return self.title
+
+
+class ProductImage(Base):
+    __tablename__ = "product_images"
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True,
+        autoincrement=True,
+        nullable=False,
+    )
+
+    image: Mapped[str] = mapped_column(
+        String(300),
+        nullable=False,
+        unique=True,
+    )
+
+    product_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("products.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.now,
+        server_default=func.now(),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.now,
+        onupdate=datetime.now,
+        server_default=func.now(),
+        server_onupdate=func.now(),
+    )
+
+    product: Mapped[Product] = relationship(
+        "Product",
+        back_populates="images",
+    )
+
+    def __str__(self):
+        return self.image

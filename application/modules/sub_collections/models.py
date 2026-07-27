@@ -18,7 +18,6 @@ class SubCollection(Base):
         primary_key=True,
         autoincrement=True,
         nullable=False,
-        unique=True,
     )
 
     title: Mapped[str] = mapped_column(

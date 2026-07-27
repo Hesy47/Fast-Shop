@@ -1,14 +1,25 @@
-from fastapi import HTTPException, status
+from fastapi import BackgroundTasks, HTTPException, Request, UploadFile, status
 from fastapi.responses import JSONResponse
 
-from application.modules.products.pagination import CustomProductPaginationResponse
-from application.modules.products.repository import ProductRepository
+from application.modules.products.pagination import (
+    CustomProductImagePaginationResponse,
+    CustomProductPaginationResponse,
+)
+from application.modules.products.repository import (
+    ProductImageRepository,
+    ProductRepository,
+)
 from application.modules.products.schemas import (
+    CreateProductImageRequest,
     CreateProductRequest,
+    EditProductImageRequest,
     EditProductRequest,
+    GetAllProductImagesResponse,
     GetAllProductsResponse,
+    GetProductImageResponse,
     GetProductResponse,
 )
+from application.shared.storage import DiskManager
 
 
 class ProductServices:
@@ -191,3 +202,223 @@ class ProductServices:
                         "error": "This sub collection does not exist",
                     },
                 )
+
+
+class ProductImageServices:
+    def __init__(self, repo: ProductImageRepository):
+        self.repo = repo
+
+    async def get_product_image_service(
+        self,
+        product_image_id: int,
+        request: Request,
+    ):
+        product_image = await self.repo.get_product_image_repository(
+            product_image_id
+        )
+
+        if not product_image:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="We do not have such this product image",
+            )
+
+        return GetProductImageResponse(
+            id=product_image.id,
+            image=f"{request.base_url}{DiskManager.PRODUCTS_SAVE_PATH}{product_image.image}",
+            product_id=product_image.product_id,
+            created_at=product_image.created_at,
+            updated_at=product_image.updated_at,
+        )
+
+    async def get_all_product_images_service(
+        self,
+        page,
+        per_page,
+        order_by,
+        search,
+        limit,
+        offset,
+        request: Request,
+        route_path,
+    ):
+        if not await self.repo.valid_order_by(order_by):
+            raise HTTPException(
+                detail=f"valid order_by choices are: {list(self.repo.VALID_ORDERING_CHOICES.keys())}",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        total_product_images = await self.repo.count_all_product_images(search)
+        product_images = await self.repo.get_all_product_images_repository(
+            limit,
+            offset,
+            order_by,
+            search,
+        )
+        paginated_responses = CustomProductImagePaginationResponse(
+            page,
+            per_page,
+            limit,
+            offset,
+            request.base_url,
+            route_path,
+            total_product_images,
+        )
+
+        return GetAllProductImagesResponse(
+            count=total_product_images,
+            next=paginated_responses.the_next(),
+            previous=paginated_responses.the_previous(),
+            total_pages=paginated_responses.total_pages(),
+            current_page=page,
+            results=[
+                {
+                    "id": product_image.id,
+                    "image": f"{request.base_url}{DiskManager.PRODUCTS_SAVE_PATH}{product_image.image}",
+                    "product_id": product_image.product_id,
+                    "created_at": product_image.created_at,
+                    "updated_at": product_image.updated_at,
+                }
+                for product_image in product_images
+            ],
+        )
+
+    async def create_product_image_service(
+        self,
+        product_id: int,
+        image: UploadFile,
+        bg: BackgroundTasks,
+    ):
+        await self._validate_product_id(product_id)
+        self._validate_required_image(image)
+
+        image_filename = DiskManager.image_title_webp_convertor_for_route(
+            image.filename
+        )
+        await self._validate_unique_image(image_filename)
+
+        payload = CreateProductImageRequest(
+            image=image_filename,
+            product_id=product_id,
+        )
+
+        await self.repo.create_product_image_repository(payload)
+        await self._schedule_image_upload(image, image_filename, bg)
+
+        return JSONResponse(
+            content={"message": "New product image created successfully"},
+            status_code=status.HTTP_201_CREATED,
+        )
+
+    async def edit_product_image_service(
+        self,
+        product_image_id: int,
+        product_id: int | None,
+        image: UploadFile | None,
+        bg: BackgroundTasks,
+    ):
+        if product_id is None and (image is None or not image.size):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="At least one field must be provided",
+            )
+
+        if product_id is not None:
+            await self._validate_product_id(product_id)
+
+        image_filename = None
+        if image is not None and image.size:
+            image_filename = DiskManager.image_title_webp_convertor_for_route(
+                image.filename
+            )
+            await self._validate_unique_image(
+                image_filename,
+                product_image_id,
+            )
+
+        payload = EditProductImageRequest(
+            image=image_filename,
+            product_id=product_id,
+        )
+        await self.repo.edit_product_image_repository(payload, product_image_id)
+
+        if image_filename is not None:
+            await self._schedule_image_upload(image, image_filename, bg)
+
+        return JSONResponse(
+            content={"message": "Product image updated successfully"},
+            status_code=status.HTTP_200_OK,
+        )
+
+    async def delete_product_image_service(self, product_image_id: int):
+        await self.repo.delete_product_image_repository(product_image_id)
+        return JSONResponse(
+            content={"message": "Product image has been deleted successfully"},
+            status_code=status.HTTP_200_OK,
+        )
+
+    async def _validate_product_id(self, product_id: int):
+        if not await self.repo.check_product_existence_repository(product_id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "field": "product_id",
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "type": "value_error",
+                    "error": "This product does not exist",
+                },
+            )
+
+    async def _validate_unique_image(
+        self,
+        image_filename: str,
+        product_image_id: int | None = None,
+    ):
+        if product_image_id is None:
+            image_exists = (
+                await self.repo.check_is_unique_image_repository_for_create(
+                    image_filename
+                )
+            )
+        else:
+            image_exists = await self.repo.check_is_unique_image_repository_for_edit(
+                image_filename,
+                product_image_id,
+            )
+
+        if image_exists:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "field": "image",
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "type": "value_error",
+                    "error": "This image is already taken",
+                },
+            )
+
+    @staticmethod
+    def _validate_required_image(image: UploadFile):
+        if not image.size:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "field": "image",
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "type": "missing",
+                    "error": "Field is required",
+                },
+            )
+
+    @staticmethod
+    async def _schedule_image_upload(
+        image: UploadFile,
+        image_filename: str,
+        bg: BackgroundTasks,
+    ):
+        image_file = await image.read()
+        bg.add_task(
+            DiskManager.upload_image_for_route,
+            DiskManager.image_processor_for_route(image_file, quality=80),
+            f"{DiskManager.PRODUCTS_SAVE_PATH}{image_filename}",
+        )

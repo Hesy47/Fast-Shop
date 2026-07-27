@@ -3,9 +3,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from application.core.database import get_db
-from application.modules.products.models import Product
-from application.modules.products.repository import ProductRepository
-from application.modules.products.services import ProductServices
+from application.modules.products.models import Product, ProductImage
+from application.modules.products.repository import (
+    ProductImageRepository,
+    ProductRepository,
+)
+from application.modules.products.services import ProductImageServices, ProductServices
 
 
 async def product_services_dp(
@@ -30,3 +33,29 @@ async def check_product_existence_by_id_dp(
         )
 
     return product_exist_result[0]
+
+
+async def product_image_services_dp(
+    session: AsyncSession = Depends(get_db),
+) -> ProductImageServices:
+    repo = ProductImageRepository(session)
+    return ProductImageServices(repo)
+
+
+async def check_product_image_existence_by_id_dp(
+    product_image_id: int,
+    session: AsyncSession = Depends(get_db),
+):
+    existence_query = select(ProductImage.id).where(
+        ProductImage.id == product_image_id
+    )
+    existence_operation = await session.execute(existence_query)
+    existence_result = existence_operation.first()
+
+    if not existence_result:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="We do not have such this product image in our database",
+        )
+
+    return existence_result[0]
