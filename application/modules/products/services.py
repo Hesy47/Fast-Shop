@@ -3,20 +3,26 @@ from fastapi.responses import JSONResponse
 
 from application.modules.products.pagination import (
     CustomProductImagePaginationResponse,
+    CustomProductInformationPaginationResponse,
     CustomProductPaginationResponse,
 )
 from application.modules.products.repository import (
     ProductImageRepository,
+    ProductInformationRepository,
     ProductRepository,
 )
 from application.modules.products.schemas import (
     CreateProductImageRequest,
+    CreateProductInformationRequest,
     CreateProductRequest,
     EditProductImageRequest,
+    EditProductInformationRequest,
     EditProductRequest,
     GetAllProductImagesResponse,
+    GetAllProductInformationResponse,
     GetAllProductsResponse,
     GetProductImageResponse,
+    GetProductInformationResponse,
     GetProductResponse,
 )
 from application.shared.storage import DiskManager
@@ -418,3 +424,187 @@ class ProductImageServices:
             DiskManager.image_processor_for_route(image_file, quality=80),
             f"{DiskManager.PRODUCTS_SAVE_PATH}{image_filename}",
         )
+
+
+class ProductInformationServices:
+    def __init__(self, repo: ProductInformationRepository):
+        self.repo = repo
+
+    async def get_product_information_service(
+        self,
+        product_information_id: int,
+    ):
+        product_information = await self.repo.get_product_information_repository(
+            product_information_id
+        )
+
+        if not product_information:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="We do not have such this product information",
+            )
+
+        return GetProductInformationResponse(**product_information._mapping)
+
+    async def get_all_product_information_service(
+        self,
+        page,
+        per_page,
+        order_by,
+        search,
+        limit,
+        offset,
+        base_url,
+        route_path,
+    ):
+        if not await self.repo.valid_order_by(order_by):
+            raise HTTPException(
+                detail=f"valid order_by choices are: {list(self.repo.VALID_ORDERING_CHOICES.keys())}",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        total_information = await self.repo.count_all_product_information(search)
+        product_information = (
+            await self.repo.get_all_product_information_repository(
+                limit,
+                offset,
+                order_by,
+                search,
+            )
+        )
+        paginated_responses = CustomProductInformationPaginationResponse(
+            page,
+            per_page,
+            limit,
+            offset,
+            base_url,
+            route_path,
+            total_information,
+        )
+
+        return GetAllProductInformationResponse(
+            count=total_information,
+            next=paginated_responses.the_next(),
+            previous=paginated_responses.the_previous(),
+            total_pages=paginated_responses.total_pages(),
+            current_page=page,
+            results=[
+                GetProductInformationResponse(**information._mapping)
+                for information in product_information
+            ],
+        )
+
+    async def create_product_information_service(
+        self,
+        payload: CreateProductInformationRequest,
+    ):
+        await self._validate_product_id(payload.product_id)
+        await self._validate_unique_key_and_product(
+            payload.key,
+            payload.product_id,
+        )
+
+        await self.repo.create_product_information_repository(payload)
+
+        return JSONResponse(
+            content={"message": "New product information created successfully"},
+            status_code=status.HTTP_201_CREATED,
+        )
+
+    async def edit_product_information_service(
+        self,
+        product_information_id: int,
+        payload: EditProductInformationRequest,
+    ):
+        if not payload.model_fields_set:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="At least one field must be provided",
+            )
+
+        current_information = await self.repo.get_product_information_repository(
+            product_information_id
+        )
+
+        effective_key = (
+            payload.key if payload.key is not None else current_information.key
+        )
+        effective_product_id = (
+            payload.product_id
+            if payload.product_id is not None
+            else current_information.product_id
+        )
+
+        if payload.product_id is not None:
+            await self._validate_product_id(payload.product_id)
+
+        await self._validate_unique_key_and_product(
+            effective_key,
+            effective_product_id,
+            product_information_id,
+        )
+
+        await self.repo.edit_product_information_repository(
+            payload,
+            product_information_id,
+        )
+
+        return JSONResponse(
+            content={"message": "Product information updated successfully"},
+            status_code=status.HTTP_200_OK,
+        )
+
+    async def delete_product_information_service(
+        self,
+        product_information_id: int,
+    ):
+        await self.repo.delete_product_information_repository(product_information_id)
+        return JSONResponse(
+            content={"message": "Product information has been deleted successfully"},
+            status_code=status.HTTP_200_OK,
+        )
+
+    async def _validate_product_id(self, product_id: int):
+        if not await self.repo.check_product_existence_repository(product_id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "field": "product_id",
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "type": "value_error",
+                    "error": "This product does not exist",
+                },
+            )
+
+    async def _validate_unique_key_and_product(
+        self,
+        key: str,
+        product_id: int,
+        product_information_id: int | None = None,
+    ):
+        if product_information_id is None:
+            information_exists = (
+                await self.repo.check_unique_key_and_product_repository_for_create(
+                    key,
+                    product_id,
+                )
+            )
+        else:
+            information_exists = (
+                await self.repo.check_unique_key_and_product_repository_for_edit(
+                    key,
+                    product_id,
+                    product_information_id,
+                )
+            )
+
+        if information_exists:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "field": "key",
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "type": "value_error",
+                    "error": "This key is already used for this product",
+                },
+            )

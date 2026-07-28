@@ -103,3 +103,41 @@ class CreateProductImageRequest(BaseModel):
 class EditProductImageRequest(BaseModel):
     image: str | None = None
     product_id: int | None = None
+
+
+class GetProductInformationResponse(BaseModel):
+    id: int
+    key: str
+    value: str
+    product_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    @field_serializer("created_at", mode="plain")
+    def created_at_serializer(value: datetime):
+        return str(jdatetime.datetime.fromgregorian(datetime=value))
+
+    @field_serializer("updated_at", mode="plain")
+    def updated_at_serializer(value: datetime):
+        return str(jdatetime.datetime.fromgregorian(datetime=value))
+
+
+class GetAllProductInformationResponse(BaseModel):
+    count: int
+    next: str | None
+    previous: str | None
+    total_pages: int
+    current_page: int
+    results: list[GetProductInformationResponse]
+
+
+class CreateProductInformationRequest(BaseModel):
+    key: str
+    value: str
+    product_id: int
+
+
+class EditProductInformationRequest(BaseModel):
+    key: str | None = None
+    value: str | None = None
+    product_id: int | None = None

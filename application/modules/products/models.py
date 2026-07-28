@@ -10,6 +10,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -129,6 +130,11 @@ class Product(Base):
         back_populates="product",
     )
 
+    information: Mapped[list[ProductInformation]] = relationship(
+        "ProductInformation",
+        back_populates="product",
+    )
+
     def __str__(self):
         return self.title
 
@@ -176,3 +182,56 @@ class ProductImage(Base):
 
     def __str__(self):
         return self.image
+
+
+class ProductInformation(Base):
+    __tablename__ = "product_information"
+    __table_args__ = (
+        UniqueConstraint(
+            "key",
+            "product_id",
+            name="uq_product_information_key_product_id",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True,
+        autoincrement=True,
+        nullable=False,
+    )
+
+    key: Mapped[str] = mapped_column(
+        String(150),
+        nullable=False,
+    )
+
+    value: Mapped[str] = mapped_column(
+        String(200),
+        nullable=False,
+    )
+
+    product_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("products.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.now,
+        server_default=func.now(),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.now,
+        onupdate=datetime.now,
+        server_default=func.now(),
+        server_onupdate=func.now(),
+    )
+
+    product: Mapped[Product] = relationship(
+        "Product",
+        back_populates="information",
+    )

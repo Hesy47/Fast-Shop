@@ -1,12 +1,14 @@
-from sqlalchemy import and_, asc, delete, desc, func, select, update
+from sqlalchemy import and_, asc, delete, desc, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from application.modules.collections.models import Collection
-from application.modules.products.models import Product, ProductImage
+from application.modules.products.models import Product, ProductImage, ProductInformation
 from application.modules.products.schemas import (
     CreateProductImageRequest,
+    CreateProductInformationRequest,
     CreateProductRequest,
     EditProductImageRequest,
+    EditProductInformationRequest,
     EditProductRequest,
 )
 from application.modules.sub_collections.models import SubCollection
@@ -260,6 +262,155 @@ class ProductImageRepository:
 
     async def delete_product_image_repository(self, product_image_id: int):
         delete_query = delete(ProductImage).where(ProductImage.id == product_image_id)
+
+        await self.session.execute(delete_query)
+        await self.session.commit()
+
+
+class ProductInformationRepository:
+    VALID_ORDERING_CHOICES = {
+        "id": asc(ProductInformation.id),
+        "-id": desc(ProductInformation.id),
+    }
+
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    async def get_product_information_repository(
+        self,
+        product_information_id: int,
+    ):
+        get_query = select(
+            ProductInformation.id,
+            ProductInformation.key,
+            ProductInformation.value,
+            ProductInformation.product_id,
+            ProductInformation.created_at,
+            ProductInformation.updated_at,
+        ).where(ProductInformation.id == product_information_id)
+
+        get_operation = await self.session.execute(get_query)
+        return get_operation.first()
+
+    async def count_all_product_information(self, search: str):
+        count_query = select(func.count(ProductInformation.id))
+
+        if search:
+            count_query = count_query.where(
+                or_(
+                    ProductInformation.key.ilike(f"%{search}%"),
+                    ProductInformation.value.ilike(f"%{search}%"),
+                )
+            )
+
+        count_operation = await self.session.execute(count_query)
+        return count_operation.scalar_one()
+
+    async def valid_order_by(self, order_by: str):
+        return order_by in self.VALID_ORDERING_CHOICES
+
+    async def get_all_product_information_repository(
+        self,
+        limit: int,
+        offset: int,
+        order_by: str,
+        search: str,
+    ):
+        get_all_query = (
+            select(
+                ProductInformation.id,
+                ProductInformation.key,
+                ProductInformation.value,
+                ProductInformation.product_id,
+                ProductInformation.created_at,
+                ProductInformation.updated_at,
+            )
+            .limit(limit)
+            .offset(offset)
+            .order_by(self.VALID_ORDERING_CHOICES[order_by])
+        )
+
+        if search:
+            get_all_query = get_all_query.where(
+                or_(
+                    ProductInformation.key.ilike(f"%{search}%"),
+                    ProductInformation.value.ilike(f"%{search}%"),
+                )
+            )
+
+        get_all_operation = await self.session.execute(get_all_query)
+        return get_all_operation.all()
+
+    async def check_product_existence_repository(self, product_id: int):
+        product_query = select(Product.id).where(Product.id == product_id)
+        product_operation = await self.session.execute(product_query)
+        return product_operation.first()
+
+    async def check_unique_key_and_product_repository_for_create(
+        self,
+        key: str,
+        product_id: int,
+    ):
+        unique_query = select(ProductInformation.id).where(
+            and_(
+                ProductInformation.key == key,
+                ProductInformation.product_id == product_id,
+            )
+        )
+        unique_operation = await self.session.execute(unique_query)
+        return unique_operation.first()
+
+    async def check_unique_key_and_product_repository_for_edit(
+        self,
+        key: str,
+        product_id: int,
+        product_information_id: int,
+    ):
+        unique_query = select(ProductInformation.id).where(
+            and_(
+                ProductInformation.key == key,
+                ProductInformation.product_id == product_id,
+                ProductInformation.id != product_information_id,
+            )
+        )
+        unique_operation = await self.session.execute(unique_query)
+        return unique_operation.first()
+
+    async def create_product_information_repository(
+        self,
+        payload: CreateProductInformationRequest,
+    ):
+        new_product_information = ProductInformation(**payload.model_dump())
+
+        self.session.add(new_product_information)
+        await self.session.commit()
+
+    async def edit_product_information_repository(
+        self,
+        payload: EditProductInformationRequest,
+        product_information_id: int,
+    ):
+        updated_information_data = payload.model_dump(
+            exclude_none=True,
+            exclude_unset=True,
+        )
+
+        update_query = (
+            update(ProductInformation)
+            .where(ProductInformation.id == product_information_id)
+            .values(**updated_information_data)
+        )
+
+        await self.session.execute(update_query)
+        await self.session.commit()
+
+    async def delete_product_information_repository(
+        self,
+        product_information_id: int,
+    ):
+        delete_query = delete(ProductInformation).where(
+            ProductInformation.id == product_information_id
+        )
 
         await self.session.execute(delete_query)
         await self.session.commit()
