@@ -6,11 +6,11 @@ from sqlalchemy import (
     BigInteger,
     DateTime,
     Enum,
+    ForeignKey,
     Integer,
     String,
     Text,
     func,
-    ForeignKey,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 

@@ -5,10 +5,10 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.staticfiles import StaticFiles
 
-from application.modules.users.routes import user_router
 from application.modules.collections.routes import collection_router
-from application.modules.sub_collections.routes import sub_collection_router
 from application.modules.products.routes import product_router
+from application.modules.sub_collections.routes import sub_collection_router
+from application.modules.users.routes import user_router
 from application.shared.exceptions import CustomExceptionsHandlers
 from application.shared.storage import DiskManager
 

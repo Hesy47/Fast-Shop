@@ -201,9 +201,7 @@ class ProductImageRepository:
         )
 
         if search:
-            get_all_query = get_all_query.where(
-                ProductImage.image.ilike(f"%{search}%")
-            )
+            get_all_query = get_all_query.where(ProductImage.image.ilike(f"%{search}%"))
 
         get_all_operation = await self.session.execute(get_all_query)
         return get_all_operation.all()
@@ -261,9 +259,7 @@ class ProductImageRepository:
         await self.session.commit()
 
     async def delete_product_image_repository(self, product_image_id: int):
-        delete_query = delete(ProductImage).where(
-            ProductImage.id == product_image_id
-        )
+        delete_query = delete(ProductImage).where(ProductImage.id == product_image_id)
 
         await self.session.execute(delete_query)
         await self.session.commit()

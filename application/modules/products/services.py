@@ -213,9 +213,7 @@ class ProductImageServices:
         product_image_id: int,
         request: Request,
     ):
-        product_image = await self.repo.get_product_image_repository(
-            product_image_id
-        )
+        product_image = await self.repo.get_product_image_repository(product_image_id)
 
         if not product_image:
             raise HTTPException(
@@ -375,10 +373,8 @@ class ProductImageServices:
         product_image_id: int | None = None,
     ):
         if product_image_id is None:
-            image_exists = (
-                await self.repo.check_is_unique_image_repository_for_create(
-                    image_filename
-                )
+            image_exists = await self.repo.check_is_unique_image_repository_for_create(
+                image_filename
             )
         else:
             image_exists = await self.repo.check_is_unique_image_repository_for_edit(

@@ -1,17 +1,9 @@
-from fastapi import (
-    APIRouter,
-    BackgroundTasks,
-    Depends,
-    File,
-    Form,
-    Request,
-    UploadFile,
-)
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Request, UploadFile
 
 from application.core.permissions import CustomPermissions
 from application.modules.products.dependencies import (
-    check_product_image_existence_by_id_dp,
     check_product_existence_by_id_dp,
+    check_product_image_existence_by_id_dp,
     product_image_services_dp,
     product_services_dp,
 )

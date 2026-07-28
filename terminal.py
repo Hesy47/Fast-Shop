@@ -1,12 +1,12 @@
 import asyncio
 from getpass import getpass
+from secrets import token_urlsafe
 
 from sqlalchemy import or_, select
 
-from application.modules.users.models import User, UserType
 from application.core.database import AsyncSessionLocal
 from application.core.hashers import CustomArgon2Hasher
-from secrets import token_urlsafe
+from application.modules.users.models import User, UserType
 
 
 def create_tokens_secret():
