@@ -6,6 +6,42 @@ from pydantic import BaseModel, field_serializer, field_validator
 from application.modules.products.models import MenuType, ScrollType, StatusType
 
 
+class PublicProductInformationResponse(BaseModel):
+    id: int
+    key: str
+    value: str
+
+
+class PublicProductGalleryResponse(BaseModel):
+    id: int
+    image: str
+
+
+class PublicGetProductResponse(BaseModel):
+    id: int
+    title: str
+    description: str
+    price: int
+    discounted_price: int
+    discount_percent: int
+    status: StatusType
+    menu: MenuType
+    scroll: ScrollType
+    collection_id: int
+    sub_collection_id: int | None
+    product_information: list[PublicProductInformationResponse]
+    gallery_set: list[PublicProductGalleryResponse]
+
+
+class PublicGetAllProductsResponse(BaseModel):
+    count: int
+    next: str | None
+    previous: str | None
+    total_pages: int
+    current_page: int
+    results: list[PublicGetProductResponse]
+
+
 class GetProductResponse(BaseModel):
     id: int
     title: str

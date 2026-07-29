@@ -5,11 +5,13 @@ from application.modules.products.pagination import (
     CustomProductImagePaginationResponse,
     CustomProductInformationPaginationResponse,
     CustomProductPaginationResponse,
+    PublicProductPaginationResponse,
 )
 from application.modules.products.repository import (
     ProductImageRepository,
     ProductInformationRepository,
     ProductRepository,
+    PublicProductRepository,
 )
 from application.modules.products.schemas import (
     CreateProductImageRequest,
@@ -24,8 +26,178 @@ from application.modules.products.schemas import (
     GetProductImageResponse,
     GetProductInformationResponse,
     GetProductResponse,
+    PublicGetAllProductsResponse,
+    PublicGetProductResponse,
 )
 from application.shared.storage import DiskManager
+
+
+class PublicProductServices:
+    def __init__(self, repo: PublicProductRepository):
+        self.repo = repo
+
+    @staticmethod
+    def calculate_discount_percent(price: int, discounted_price: int) -> int:
+        if price == 0:
+            return 0
+        return int((price - discounted_price) / price * 100)
+
+    async def get_product_service(self, product_id: int, request: Request):
+        product = await self.repo.get_product_repository(product_id)
+
+        if not product:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="We do not have such this product",
+            )
+
+        information, gallery = await self._get_related_data([product.id], request)
+        return self._build_product_response(
+            product,
+            information,
+            gallery,
+        )
+
+    async def get_all_products_service(
+        self,
+        page,
+        per_page,
+        order_by,
+        search,
+        collection_id,
+        sub_collection_id,
+        has_discount,
+        min_price,
+        max_price,
+        limit,
+        offset,
+        request: Request,
+        route_path,
+    ):
+        if not await self.repo.valid_order_by(order_by):
+            raise HTTPException(
+                detail=f"valid order_by choices are: {list(self.repo.VALID_ORDERING_CHOICES.keys())}",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if min_price > max_price:
+            raise HTTPException(
+                detail="min_price cannot be greater than max_price",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        total_products = await self.repo.count_all_products(
+            search,
+            collection_id,
+            sub_collection_id,
+            has_discount,
+            min_price,
+            max_price,
+        )
+        products = await self.repo.get_all_products_repository(
+            limit,
+            offset,
+            order_by,
+            search,
+            collection_id,
+            sub_collection_id,
+            has_discount,
+            min_price,
+            max_price,
+        )
+        product_ids = [product.id for product in products]
+        information, gallery = await self._get_related_data(product_ids, request)
+        paginated_responses = PublicProductPaginationResponse(
+            page,
+            per_page,
+            limit,
+            offset,
+            request.base_url,
+            route_path,
+            total_products,
+            request.query_params,
+        )
+
+        return PublicGetAllProductsResponse(
+            count=total_products,
+            next=paginated_responses.the_next(),
+            previous=paginated_responses.the_previous(),
+            total_pages=paginated_responses.total_pages(),
+            current_page=page,
+            results=[
+                self._build_product_response(
+                    product,
+                    information,
+                    gallery,
+                )
+                for product in products
+            ],
+        )
+
+    async def _get_related_data(
+        self,
+        product_ids: list[int],
+        request: Request,
+    ):
+        product_information = await self.repo.get_product_information_repository(
+            product_ids
+        )
+        product_images = await self.repo.get_product_images_repository(product_ids)
+
+        information_by_product: dict[int, list[dict]] = {
+            product_id: [] for product_id in product_ids
+        }
+        gallery_by_product: dict[int, list[dict]] = {
+            product_id: [] for product_id in product_ids
+        }
+
+        for information in product_information:
+            information_by_product[information.product_id].append(
+                {
+                    "id": information.id,
+                    "key": information.key,
+                    "value": information.value,
+                }
+            )
+
+        for image in product_images:
+            gallery_by_product[image.product_id].append(
+                {
+                    "id": image.id,
+                    "image": (
+                        f"{request.base_url}"
+                        f"{DiskManager.PRODUCTS_SAVE_PATH}"
+                        f"{image.image}"
+                    ),
+                }
+            )
+
+        return information_by_product, gallery_by_product
+
+    def _build_product_response(
+        self,
+        product,
+        information_by_product,
+        gallery_by_product,
+    ):
+        return PublicGetProductResponse(
+            id=product.id,
+            title=product.title,
+            description=product.description,
+            price=product.price,
+            discounted_price=product.discounted_price,
+            discount_percent=self.calculate_discount_percent(
+                product.price,
+                product.discounted_price,
+            ),
+            status=product.status,
+            menu=product.menu,
+            scroll=product.scroll,
+            collection_id=product.collection_id,
+            sub_collection_id=product.sub_collection_id,
+            product_information=information_by_product.get(product.id, []),
+            gallery_set=gallery_by_product.get(product.id, []),
+        )
 
 
 class ProductServices:
