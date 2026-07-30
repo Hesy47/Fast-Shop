@@ -3,7 +3,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from application.core.database import get_db
-from application.modules.products.models import Product, ProductImage, ProductInformation
+from application.modules.products.models import (
+    Product,
+    ProductImage,
+    ProductInformation,
+)
 from application.modules.products.repository import (
     ProductImageRepository,
     ProductInformationRepository,
@@ -69,9 +73,7 @@ async def check_product_image_existence_by_id_dp(
     product_image_id: int,
     session: AsyncSession = Depends(get_db),
 ):
-    existence_query = select(ProductImage.id).where(
-        ProductImage.id == product_image_id
-    )
+    existence_query = select(ProductImage.id).where(ProductImage.id == product_image_id)
     existence_operation = await session.execute(existence_query)
     existence_result = existence_operation.first()
 
