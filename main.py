@@ -24,7 +24,14 @@ async def startup_events(app: FastAPI):
     print("Application events ended...")
 
 
-app = FastAPI(lifespan=startup_events)
+app = FastAPI(
+    lifespan=startup_events,
+    title="Fast-Shop",
+    description="The fully asynchronous FastAPI online shop application",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
 
 app.include_router(user_router)
 app.include_router(collection_router)
