@@ -1,8 +1,10 @@
 from sqlalchemy import and_, asc, delete, desc, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import load_only, selectinload
 
 from application.modules.collections.models import Collection
 from application.modules.products.models import (
+    MenuType,
     Product,
     ProductImage,
     ProductInformation,
@@ -170,6 +172,129 @@ class PublicProductRepository:
 
         get_all_operation = await self.session.execute(get_all_query)
         return get_all_operation.all()
+
+
+class SpecialProductRepository:
+    VALID_ORDERING_CHOICES = {
+        "id": asc(Product.id),
+        "-id": desc(Product.id),
+    }
+
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    @staticmethod
+    def _with_filters(
+        query,
+        search: str,
+        collection_id: int | None,
+        sub_collection_id: int | None,
+        has_discount: bool | None,
+        min_price: int,
+        max_price: int,
+    ):
+        query = PublicProductRepository._apply_filters(
+            query,
+            search,
+            collection_id,
+            sub_collection_id,
+            has_discount,
+            min_price,
+            max_price,
+        )
+        return query.where(Product.menu == MenuType.special)
+
+    @staticmethod
+    def _with_related_data(query):
+        return query.options(
+            load_only(
+                Product.id,
+                Product.title,
+                Product.description,
+                Product.price,
+                Product.discounted_price,
+                Product.status,
+                Product.menu,
+                Product.scroll,
+                Product.collection_id,
+                Product.sub_collection_id,
+            ),
+            selectinload(Product.images).load_only(
+                ProductImage.id,
+                ProductImage.image,
+            ),
+            selectinload(Product.information).load_only(
+                ProductInformation.id,
+                ProductInformation.key,
+                ProductInformation.value,
+            ),
+        )
+
+    async def get_product_repository(self, product_id: int):
+        get_query = self._with_related_data(
+            select(Product).where(
+                Product.id == product_id,
+                Product.menu == MenuType.special,
+            )
+        )
+
+        get_operation = await self.session.execute(get_query)
+        return get_operation.scalar_one_or_none()
+
+    async def count_all_products(
+        self,
+        search: str,
+        collection_id: int | None,
+        sub_collection_id: int | None,
+        has_discount: bool | None,
+        min_price: int,
+        max_price: int,
+    ):
+        count_query = self._with_filters(
+            select(func.count(Product.id)),
+            search,
+            collection_id,
+            sub_collection_id,
+            has_discount,
+            min_price,
+            max_price,
+        )
+
+        count_operation = await self.session.execute(count_query)
+        return count_operation.scalar_one()
+
+    async def valid_order_by(self, order_by: str):
+        return order_by in self.VALID_ORDERING_CHOICES
+
+    async def get_all_products_repository(
+        self,
+        limit: int,
+        offset: int,
+        order_by: str,
+        search: str,
+        collection_id: int | None,
+        sub_collection_id: int | None,
+        has_discount: bool | None,
+        min_price: int,
+        max_price: int,
+    ):
+        get_all_query = self._with_related_data(
+            self._with_filters(
+                select(Product),
+                search,
+                collection_id,
+                sub_collection_id,
+                has_discount,
+                min_price,
+                max_price,
+            )
+            .limit(limit)
+            .offset(offset)
+            .order_by(self.VALID_ORDERING_CHOICES[order_by])
+        )
+
+        get_all_operation = await self.session.execute(get_all_query)
+        return get_all_operation.scalars().all()
 
 
 class ProductRepository:

@@ -82,6 +82,14 @@ class PublicProductPaginationResponse:
         return ceil(self.total_items / self.per_page)
 
 
+class SpecialProductPaginationParams(PublicProductPaginationParams):
+    pass
+
+
+class SpecialProductPaginationResponse(PublicProductPaginationResponse):
+    pass
+
+
 class CustomProductPaginationParams:
     def __init__(
         self,

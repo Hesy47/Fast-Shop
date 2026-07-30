@@ -9,12 +9,14 @@ from application.modules.products.repository import (
     ProductInformationRepository,
     ProductRepository,
     PublicProductRepository,
+    SpecialProductRepository,
 )
 from application.modules.products.services import (
     ProductImageServices,
     ProductInformationServices,
     ProductServices,
     PublicProductServices,
+    SpecialProductServices,
 )
 
 
@@ -23,6 +25,13 @@ async def public_product_services_dp(
 ) -> PublicProductServices:
     repo = PublicProductRepository(session)
     return PublicProductServices(repo)
+
+
+async def special_product_services_dp(
+    session: AsyncSession = Depends(get_db),
+) -> SpecialProductServices:
+    repo = SpecialProductRepository(session)
+    return SpecialProductServices(repo)
 
 
 async def product_services_dp(

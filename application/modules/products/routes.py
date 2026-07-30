@@ -9,12 +9,14 @@ from application.modules.products.dependencies import (
     product_information_services_dp,
     product_services_dp,
     public_product_services_dp,
+    special_product_services_dp,
 )
 from application.modules.products.pagination import (
     CustomProductImagePaginationParams,
     CustomProductInformationPaginationParams,
     CustomProductPaginationParams,
     PublicProductPaginationParams,
+    SpecialProductPaginationParams,
 )
 from application.modules.products.schemas import (
     CreateProductInformationRequest,
@@ -23,12 +25,15 @@ from application.modules.products.schemas import (
     EditProductRequest,
     PublicGetAllProductsResponse,
     PublicGetProductResponse,
+    SpecialGetAllProductsResponse,
+    SpecialGetProductResponse,
 )
 from application.modules.products.services import (
     ProductImageServices,
     ProductInformationServices,
     ProductServices,
     PublicProductServices,
+    SpecialProductServices,
 )
 
 product_router = APIRouter(prefix="/api")
@@ -71,6 +76,46 @@ async def public_get_all_products(
         params.offset,
         request,
         "api/products",
+    )
+
+
+@product_router.get(
+    path="/special-products/{id:int}",
+    tags=["Product-Public"],
+    response_model=SpecialGetProductResponse,
+)
+async def public_get_special_product(
+    request: Request,
+    id: int,
+    service: SpecialProductServices = Depends(special_product_services_dp),
+):
+    return await service.get_product_service(id, request)
+
+
+@product_router.get(
+    path="/special-products",
+    tags=["Product-Public"],
+    response_model=SpecialGetAllProductsResponse,
+)
+async def public_get_all_special_products(
+    request: Request,
+    params: SpecialProductPaginationParams = Depends(),
+    service: SpecialProductServices = Depends(special_product_services_dp),
+):
+    return await service.get_all_products_service(
+        params.page,
+        params.per_page,
+        params.ordering,
+        params.search,
+        params.collection_id,
+        params.sub_collection_id,
+        params.has_discount,
+        params.min_price,
+        params.max_price,
+        params.limit,
+        params.offset,
+        request,
+        "api/special-products",
     )
 
 

@@ -42,6 +42,19 @@ class PublicGetAllProductsResponse(BaseModel):
     results: list[PublicGetProductResponse]
 
 
+class SpecialGetProductResponse(PublicGetProductResponse):
+    pass
+
+
+class SpecialGetAllProductsResponse(BaseModel):
+    count: int
+    next: str | None
+    previous: str | None
+    total_pages: int
+    current_page: int
+    results: list[SpecialGetProductResponse]
+
+
 class GetProductResponse(BaseModel):
     id: int
     title: str
