@@ -8,6 +8,9 @@ class PublicGetCollectionResponse(BaseModel):
     id: int
     title: str
     image: str
+    slug_tag: str | None
+    title_tag: str | None
+    description_tag: str | None
 
 
 class PublicGetAllCollectionsResponse(BaseModel):
@@ -23,6 +26,9 @@ class GetCollectionResponse(BaseModel):
     id: int
     title: str
     image: str
+    slug_tag: str | None
+    title_tag: str | None
+    description_tag: str | None
     created_at: datetime
     updated_at: datetime
 
@@ -47,8 +53,14 @@ class GetAllCollectionsResponse(BaseModel):
 class CreateCollectionRequest(BaseModel):
     title: str
     image: str
+    slug_tag: str | None = None
+    title_tag: str | None = None
+    description_tag: str | None = None
 
 
 class EditCollectionRequest(BaseModel):
     title: str | None = None
     image: str | None = None
+    slug_tag: str | None = None
+    title_tag: str | None = None
+    description_tag: str | None = None

@@ -22,9 +22,9 @@ class CollectionServices:
     def __init__(self, repo: CollectionRepository):
         self.repo = repo
 
-    async def public_get_collection_service(self, collection_id: int, request: Request):
+    async def public_get_collection_service(self, slug_tag: str, request: Request):
         collection_repository = await self.repo.public_get_collection_repository(
-            collection_id
+            slug_tag
         )
 
         if not collection_repository:
@@ -37,6 +37,9 @@ class CollectionServices:
             id=collection_repository.id,
             title=collection_repository.title,
             image=f"{request.base_url}{DiskManager.COLLECTIONS_SAVE_PATH}{collection_repository.image}",
+            slug_tag=collection_repository.slug_tag,
+            title_tag=collection_repository.title_tag,
+            description_tag=collection_repository.description_tag,
         )
 
     async def public_get_all_collections_service(
@@ -87,6 +90,9 @@ class CollectionServices:
                     "id": collection.id,
                     "title": collection.title,
                     "image": f"{request.base_url}{DiskManager.COLLECTIONS_SAVE_PATH}{collection.image}",
+                    "slug_tag": collection.slug_tag,
+                    "title_tag": collection.title_tag,
+                    "description_tag": collection.description_tag,
                 }
                 for collection in collection_repository
             ],
@@ -105,6 +111,9 @@ class CollectionServices:
             id=collection_repository.id,
             title=collection_repository.title,
             image=f"{request.base_url}{DiskManager.COLLECTIONS_SAVE_PATH}{collection_repository.image}",
+            slug_tag=collection_repository.slug_tag,
+            title_tag=collection_repository.title_tag,
+            description_tag=collection_repository.description_tag,
             created_at=collection_repository.created_at,
             updated_at=collection_repository.updated_at,
         )
@@ -151,6 +160,9 @@ class CollectionServices:
                     "id": collection.id,
                     "title": collection.title,
                     "image": f"{request.base_url}{DiskManager.COLLECTIONS_SAVE_PATH}{collection.image}",
+                    "slug_tag": collection.slug_tag,
+                    "title_tag": collection.title_tag,
+                    "description_tag": collection.description_tag,
                     "created_at": collection.created_at,
                     "updated_at": collection.updated_at,
                 }
@@ -162,6 +174,9 @@ class CollectionServices:
         self,
         title: str,
         image: UploadFile,
+        slug_tag: str | None,
+        title_tag: str | None,
+        description_tag: str | None,
         bg: BackgroundTasks,
     ):
         if not int(image.size) > 0:
@@ -186,6 +201,19 @@ class CollectionServices:
                 },
             )
 
+        if slug_tag and await self.repo.check_is_unique_slug_repository_for_create(
+            slug_tag
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "field": "slug_tag",
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "type": "value_error",
+                    "error": "This slug is already taken",
+                },
+            )
+
         image_filename = DiskManager.image_title_webp_convertor_for_route(
             image.filename
         )
@@ -202,7 +230,13 @@ class CollectionServices:
             )
 
         try:
-            payload = CreateCollectionRequest(title=title, image=image_filename)
+            payload = CreateCollectionRequest(
+                title=title,
+                image=image_filename,
+                slug_tag=slug_tag,
+                title_tag=title_tag,
+                description_tag=description_tag,
+            )
         except ValidationError as error:
             await CustomExceptionsHandlers.pydantic_validation_handler_for_route(error)
 
@@ -224,7 +258,10 @@ class CollectionServices:
     async def edit_collection_service(
         self,
         title: str,
-        image: UploadFile,
+        image: UploadFile | None,
+        slug_tag: str | None,
+        title_tag: str | None,
+        description_tag: str | None,
         collection_id: int,
         bg: BackgroundTasks,
     ):
@@ -243,13 +280,29 @@ class CollectionServices:
                     },
                 )
 
-        if int(image.size) > 0:
+        if slug_tag and await self.repo.check_is_unique_slug_repository_for_edit(
+            slug_tag,
+            collection_id,
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "field": "slug_tag",
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "type": "value_error",
+                    "error": "This slug is already taken",
+                },
+            )
+
+        has_image = image is not None and bool(image.size)
+        if has_image:
             image_filename = DiskManager.image_title_webp_convertor_for_route(
                 image.filename
             )
 
             if await self.repo.check_is_unique_image_repository_for_update(
                 image_filename,
+                collection_id,
             ):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -264,13 +317,19 @@ class CollectionServices:
             image_filename = None
 
         try:
-            payload = EditCollectionRequest(title=title, image=image_filename)
+            payload = EditCollectionRequest(
+                title=title,
+                image=image_filename,
+                slug_tag=slug_tag,
+                title_tag=title_tag,
+                description_tag=description_tag,
+            )
         except ValidationError as error:
             await CustomExceptionsHandlers.pydantic_validation_handler_for_route(error)
 
         await self.repo.edit_collection_repository(payload, collection_id)
 
-        if int(image.size) > 0:
+        if has_image:
             image_file = await image.read()
 
             bg.add_task(

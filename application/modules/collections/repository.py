@@ -14,12 +14,15 @@ class CollectionRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def public_get_collection_repository(self, collection_id: int):
+    async def public_get_collection_repository(self, slug_tag: str):
         get_query = select(
             Collection.id,
             Collection.title,
             Collection.image,
-        ).where(Collection.id == collection_id)
+            Collection.slug_tag,
+            Collection.title_tag,
+            Collection.description_tag,
+        ).where(Collection.slug_tag == slug_tag)
 
         get_operation = await self.session.execute(get_query)
         get_result = get_operation.first()
@@ -35,6 +38,9 @@ class CollectionRepository:
                 Collection.id,
                 Collection.title,
                 Collection.image,
+                Collection.slug_tag,
+                Collection.title_tag,
+                Collection.description_tag,
             )
             .limit(limit)
             .offset(offset)
@@ -54,6 +60,9 @@ class CollectionRepository:
             Collection.id,
             Collection.title,
             Collection.image,
+            Collection.slug_tag,
+            Collection.title_tag,
+            Collection.description_tag,
             Collection.created_at,
             Collection.updated_at,
         ).where(Collection.id == collection_id)
@@ -85,6 +94,9 @@ class CollectionRepository:
                 Collection.id,
                 Collection.title,
                 Collection.image,
+                Collection.slug_tag,
+                Collection.title_tag,
+                Collection.description_tag,
                 Collection.created_at,
                 Collection.updated_at,
             )
@@ -115,6 +127,13 @@ class CollectionRepository:
 
         return is_unique_result
 
+    async def check_is_unique_slug_repository_for_create(self, slug_tag: str):
+        is_unique_query = select(Collection.id).where(
+            Collection.slug_tag == slug_tag
+        )
+        is_unique_operation = await self.session.execute(is_unique_query)
+        return is_unique_operation.first()
+
     async def create_collection_repository(self, payload: CreateCollectionRequest):
         new_collection = Collection(**payload.model_dump())
 
@@ -134,12 +153,29 @@ class CollectionRepository:
 
         return is_unique_result
 
-    async def check_is_unique_image_repository_for_update(self, image: str):
-        is_unique_query = select(Collection.id).where(Collection.image == image)
+    async def check_is_unique_image_repository_for_update(
+        self,
+        image: str,
+        collection_id: int,
+    ):
+        is_unique_query = select(Collection.id).where(
+            and_(Collection.image == image, Collection.id != collection_id)
+        )
         is_unique_operation = await self.session.execute(is_unique_query)
         is_unique_result = is_unique_operation.first()
 
         return is_unique_result
+
+    async def check_is_unique_slug_repository_for_edit(
+        self,
+        slug_tag: str,
+        collection_id: int,
+    ):
+        is_unique_query = select(Collection.id).where(
+            and_(Collection.slug_tag == slug_tag, Collection.id != collection_id)
+        )
+        is_unique_operation = await self.session.execute(is_unique_query)
+        return is_unique_operation.first()
 
     async def edit_collection_repository(
         self, payload: EditCollectionRequest, collection_id: int

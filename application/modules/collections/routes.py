@@ -12,15 +12,15 @@ collection_router = APIRouter(prefix="/api")
 
 
 @collection_router.get(
-    path="/collections/{id:int}",
+    path="/collections/{slug_tag}",
     tags=["Collection-Public"],
 )
 async def public_get_collection(
     request: Request,
-    id: int,
+    slug_tag: str,
     service: CollectionServices = Depends(collection_services_dp),
 ):
-    return await service.public_get_collection_service(id, request)
+    return await service.public_get_collection_service(slug_tag, request)
 
 
 @collection_router.get(
@@ -94,10 +94,20 @@ async def create_collection(
     bg: BackgroundTasks,
     title: str = Form(),
     image: UploadFile = File(),
+    slug_tag: str | None = Form(None),
+    title_tag: str | None = Form(None),
+    description_tag: str | None = Form(None),
     service: CollectionServices = Depends(collection_services_dp),
 ):
 
-    return await service.create_collection_service(title, image, bg)
+    return await service.create_collection_service(
+        title,
+        image,
+        slug_tag,
+        title_tag,
+        description_tag,
+        bg,
+    )
 
 
 @collection_router.patch(
@@ -110,11 +120,22 @@ async def edit_collection(
     collection_id: int = Depends(check_collection_existence_by_id_dp),
     title: str | None = Form(None),
     image: UploadFile | None = File(None),
+    slug_tag: str | None = Form(None),
+    title_tag: str | None = Form(None),
+    description_tag: str | None = Form(None),
     services: CollectionServices = Depends(
         collection_services_dp,
     ),
 ):
-    return await services.edit_collection_service(title, image, collection_id, bg)
+    return await services.edit_collection_service(
+        title,
+        image,
+        slug_tag,
+        title_tag,
+        description_tag,
+        collection_id,
+        bg,
+    )
 
 
 @collection_router.delete(
