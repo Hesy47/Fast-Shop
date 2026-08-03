@@ -14,15 +14,15 @@ sub_collection_router = APIRouter(prefix="/api")
 
 
 @sub_collection_router.get(
-    path="/sub-collections/{id:int}",
+    path="/sub-collections/{slug_tag}",
     tags=["Sub-Collection-Public"],
 )
 async def public_get_sub_collection(
     request: Request,
-    id: int,
+    slug_tag: str,
     service: SubCollectionServices = Depends(sub_collection_services_dp),
 ):
-    return await service.public_get_sub_collection_service(id, request)
+    return await service.public_get_sub_collection_service(slug_tag, request)
 
 
 @sub_collection_router.get(
@@ -96,10 +96,20 @@ async def create_sub_collection(
     bg: BackgroundTasks,
     title: str = Form(),
     image: UploadFile = File(),
+    slug_tag: str = Form(),
+    title_tag: str | None = Form(None),
+    description_tag: str | None = Form(None),
     service: SubCollectionServices = Depends(sub_collection_services_dp),
 ):
 
-    return await service.create_sub_collection_service(title, image, bg)
+    return await service.create_sub_collection_service(
+        title,
+        image,
+        slug_tag,
+        title_tag,
+        description_tag,
+        bg,
+    )
 
 
 @sub_collection_router.patch(
@@ -112,12 +122,21 @@ async def edit_sub_collection(
     sub_collection_id: int = Depends(check_sub_collection_existence_by_id_dp),
     title: str | None = Form(None),
     image: UploadFile | None = File(None),
+    slug_tag: str | None = Form(None),
+    title_tag: str | None = Form(None),
+    description_tag: str | None = Form(None),
     services: SubCollectionServices = Depends(
         sub_collection_services_dp,
     ),
 ):
     return await services.edit_sub_collection_service(
-        title, image, sub_collection_id, bg
+        title,
+        image,
+        slug_tag,
+        title_tag,
+        description_tag,
+        sub_collection_id,
+        bg,
     )
 
 

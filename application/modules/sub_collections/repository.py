@@ -17,12 +17,15 @@ class SubCollectionRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def public_get_sub_collection_repository(self, sub_collection_id: int):
+    async def public_get_sub_collection_repository(self, slug_tag: str):
         get_query = select(
             SubCollection.id,
             SubCollection.title,
             SubCollection.image,
-        ).where(SubCollection.id == sub_collection_id)
+            SubCollection.slug_tag,
+            SubCollection.title_tag,
+            SubCollection.description_tag,
+        ).where(SubCollection.slug_tag == slug_tag)
 
         get_operation = await self.session.execute(get_query)
         get_result = get_operation.first()
@@ -42,6 +45,9 @@ class SubCollectionRepository:
                 SubCollection.id,
                 SubCollection.title,
                 SubCollection.image,
+                SubCollection.slug_tag,
+                SubCollection.title_tag,
+                SubCollection.description_tag,
             )
             .limit(limit)
             .offset(offset)
@@ -63,6 +69,9 @@ class SubCollectionRepository:
             SubCollection.id,
             SubCollection.title,
             SubCollection.image,
+            SubCollection.slug_tag,
+            SubCollection.title_tag,
+            SubCollection.description_tag,
             SubCollection.created_at,
             SubCollection.updated_at,
         ).where(SubCollection.id == sub_collection_id)
@@ -97,6 +106,9 @@ class SubCollectionRepository:
                 SubCollection.id,
                 SubCollection.title,
                 SubCollection.image,
+                SubCollection.slug_tag,
+                SubCollection.title_tag,
+                SubCollection.description_tag,
                 SubCollection.created_at,
                 SubCollection.updated_at,
             )
@@ -129,6 +141,13 @@ class SubCollectionRepository:
 
         return is_unique_result
 
+    async def check_is_unique_slug_repository_for_create(self, slug_tag: str):
+        is_unique_query = select(SubCollection.id).where(
+            SubCollection.slug_tag == slug_tag
+        )
+        is_unique_operation = await self.session.execute(is_unique_query)
+        return is_unique_operation.first()
+
     async def create_sub_collection_repository(
         self, payload: CreateSubCollectionRequest
     ):
@@ -150,12 +169,35 @@ class SubCollectionRepository:
 
         return is_unique_result
 
-    async def check_is_unique_image_repository_for_edit(self, image: str):
-        is_unique_query = select(SubCollection.id).where(SubCollection.image == image)
+    async def check_is_unique_image_repository_for_edit(
+        self,
+        image: str,
+        sub_collection_id: int,
+    ):
+        is_unique_query = select(SubCollection.id).where(
+            and_(
+                SubCollection.image == image,
+                SubCollection.id != sub_collection_id,
+            )
+        )
         is_unique_operation = await self.session.execute(is_unique_query)
         is_unique_result = is_unique_operation.first()
 
         return is_unique_result
+
+    async def check_is_unique_slug_repository_for_edit(
+        self,
+        slug_tag: str,
+        sub_collection_id: int,
+    ):
+        is_unique_query = select(SubCollection.id).where(
+            and_(
+                SubCollection.slug_tag == slug_tag,
+                SubCollection.id != sub_collection_id,
+            )
+        )
+        is_unique_operation = await self.session.execute(is_unique_query)
+        return is_unique_operation.first()
 
     async def edit_sub_collection_repository(
         self, payload: EditSubCollectionRequest, sub_collection_id: int

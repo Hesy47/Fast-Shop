@@ -8,6 +8,10 @@ class PublicGetSubCollectionResponse(BaseModel):
     id: int
     title: str
     image: str
+    slug_tag: str | None
+    title_tag: str | None
+    description_tag: str | None
+    canonical_tag: str | None
 
 
 class PublicGetAllSubCollectionsResponse(BaseModel):
@@ -23,6 +27,10 @@ class GetSubCollectionResponse(BaseModel):
     id: int
     title: str
     image: str
+    slug_tag: str | None
+    title_tag: str | None
+    description_tag: str | None
+    canonical_tag: str | None
     created_at: datetime
     updated_at: datetime
 
@@ -47,8 +55,14 @@ class GetAllSubCollectionsResponse(BaseModel):
 class CreateSubCollectionRequest(BaseModel):
     title: str
     image: str
+    slug_tag: str
+    title_tag: str | None = None
+    description_tag: str | None = None
 
 
 class EditSubCollectionRequest(BaseModel):
     title: str | None = None
     image: str | None = None
+    slug_tag: str | None = None
+    title_tag: str | None = None
+    description_tag: str | None = None

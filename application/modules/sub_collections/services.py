@@ -22,11 +22,17 @@ class SubCollectionServices:
     def __init__(self, repo: SubCollectionRepository):
         self.repo = repo
 
+    @staticmethod
+    def build_canonical_tag(request: Request, slug_tag: str | None):
+        if slug_tag is None:
+            return None
+        return f"{request.base_url}sub-collections/{slug_tag}"
+
     async def public_get_sub_collection_service(
-        self, sub_collection_id: int, request: Request
+        self, slug_tag: str, request: Request
     ):
         sub_collection_repository = (
-            await self.repo.public_get_sub_collection_repository(sub_collection_id)
+            await self.repo.public_get_sub_collection_repository(slug_tag)
         )
 
         if not sub_collection_repository:
@@ -38,7 +44,14 @@ class SubCollectionServices:
         return PublicGetSubCollectionResponse(
             id=sub_collection_repository.id,
             title=sub_collection_repository.title,
-            image=f"{request.base_url}{DiskManager.COLLECTIONS_SAVE_PATH}{sub_collection_repository.image}",
+            image=f"{request.base_url}{DiskManager.SUB_COLLECTIONS_SAVE_PATH}{sub_collection_repository.image}",
+            slug_tag=sub_collection_repository.slug_tag,
+            title_tag=sub_collection_repository.title_tag,
+            description_tag=sub_collection_repository.description_tag,
+            canonical_tag=self.build_canonical_tag(
+                request,
+                sub_collection_repository.slug_tag,
+            ),
         )
 
     async def public_get_all_sub_collections_service(
@@ -93,6 +106,13 @@ class SubCollectionServices:
                     "id": sub_collection.id,
                     "title": sub_collection.title,
                     "image": f"{request.base_url}{DiskManager.SUB_COLLECTIONS_SAVE_PATH}{sub_collection.image}",
+                    "slug_tag": sub_collection.slug_tag,
+                    "title_tag": sub_collection.title_tag,
+                    "description_tag": sub_collection.description_tag,
+                    "canonical_tag": self.build_canonical_tag(
+                        request,
+                        sub_collection.slug_tag,
+                    ),
                 }
                 for sub_collection in sub_collection_repository
             ],
@@ -115,6 +135,13 @@ class SubCollectionServices:
             id=sub_collection_repository.id,
             title=sub_collection_repository.title,
             image=f"{request.base_url}{DiskManager.SUB_COLLECTIONS_SAVE_PATH}{sub_collection_repository.image}",
+            slug_tag=sub_collection_repository.slug_tag,
+            title_tag=sub_collection_repository.title_tag,
+            description_tag=sub_collection_repository.description_tag,
+            canonical_tag=self.build_canonical_tag(
+                request,
+                sub_collection_repository.slug_tag,
+            ),
             created_at=sub_collection_repository.created_at,
             updated_at=sub_collection_repository.updated_at,
         )
@@ -163,6 +190,13 @@ class SubCollectionServices:
                     "id": sub_collection.id,
                     "title": sub_collection.title,
                     "image": f"{request.base_url}{DiskManager.SUB_COLLECTIONS_SAVE_PATH}{sub_collection.image}",
+                    "slug_tag": sub_collection.slug_tag,
+                    "title_tag": sub_collection.title_tag,
+                    "description_tag": sub_collection.description_tag,
+                    "canonical_tag": self.build_canonical_tag(
+                        request,
+                        sub_collection.slug_tag,
+                    ),
                     "created_at": sub_collection.created_at,
                     "updated_at": sub_collection.updated_at,
                 }
@@ -174,6 +208,9 @@ class SubCollectionServices:
         self,
         title: str,
         image: UploadFile,
+        slug_tag: str,
+        title_tag: str | None,
+        description_tag: str | None,
         bg: BackgroundTasks,
     ):
         if not int(image.size) > 0:
@@ -198,6 +235,17 @@ class SubCollectionServices:
                 },
             )
 
+        if await self.repo.check_is_unique_slug_repository_for_create(slug_tag):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "field": "slug_tag",
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "type": "value_error",
+                    "error": "This slug is already taken",
+                },
+            )
+
         image_filename = DiskManager.image_title_webp_convertor_for_route(
             image.filename
         )
@@ -214,7 +262,13 @@ class SubCollectionServices:
             )
 
         try:
-            payload = CreateSubCollectionRequest(title=title, image=image_filename)
+            payload = CreateSubCollectionRequest(
+                title=title,
+                image=image_filename,
+                slug_tag=slug_tag,
+                title_tag=title_tag,
+                description_tag=description_tag,
+            )
         except ValidationError as error:
             await CustomExceptionsHandlers.pydantic_validation_handler_for_route(error)
 
@@ -236,7 +290,10 @@ class SubCollectionServices:
     async def edit_sub_collection_service(
         self,
         title: str,
-        image: UploadFile,
+        image: UploadFile | None,
+        slug_tag: str | None,
+        title_tag: str | None,
+        description_tag: str | None,
         sub_collection_id: int,
         bg: BackgroundTasks,
     ):
@@ -256,13 +313,29 @@ class SubCollectionServices:
                     },
                 )
 
-        if int(image.size) > 0:
+        if slug_tag and await self.repo.check_is_unique_slug_repository_for_edit(
+            slug_tag,
+            sub_collection_id,
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "field": "slug_tag",
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "type": "value_error",
+                    "error": "This slug is already taken",
+                },
+            )
+
+        has_image = image is not None and bool(image.size)
+        if has_image:
             image_filename = DiskManager.image_title_webp_convertor_for_route(
                 image.filename
             )
 
             if await self.repo.check_is_unique_image_repository_for_edit(
                 image_filename,
+                sub_collection_id,
             ):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -277,13 +350,19 @@ class SubCollectionServices:
             image_filename = None
 
         try:
-            payload = EditSubCollectionRequest(title=title, image=image_filename)
+            payload = EditSubCollectionRequest(
+                title=title,
+                image=image_filename,
+                slug_tag=slug_tag,
+                title_tag=title_tag,
+                description_tag=description_tag,
+            )
         except ValidationError as error:
             await CustomExceptionsHandlers.pydantic_validation_handler_for_route(error)
 
         await self.repo.edit_sub_collection_repository(payload, sub_collection_id)
 
-        if int(image.size) > 0:
+        if has_image:
             image_file = await image.read()
 
             bg.add_task(
