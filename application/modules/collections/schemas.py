@@ -11,6 +11,7 @@ class PublicGetCollectionResponse(BaseModel):
     slug_tag: str | None
     title_tag: str | None
     description_tag: str | None
+    canonical_tag: str | None
 
 
 class PublicGetAllCollectionsResponse(BaseModel):
@@ -29,6 +30,7 @@ class GetCollectionResponse(BaseModel):
     slug_tag: str | None
     title_tag: str | None
     description_tag: str | None
+    canonical_tag: str | None
     created_at: datetime
     updated_at: datetime
 
@@ -53,7 +55,7 @@ class GetAllCollectionsResponse(BaseModel):
 class CreateCollectionRequest(BaseModel):
     title: str
     image: str
-    slug_tag: str | None = None
+    slug_tag: str
     title_tag: str | None = None
     description_tag: str | None = None
 

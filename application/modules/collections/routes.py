@@ -94,7 +94,7 @@ async def create_collection(
     bg: BackgroundTasks,
     title: str = Form(),
     image: UploadFile = File(),
-    slug_tag: str | None = Form(None),
+    slug_tag: str = Form(),
     title_tag: str | None = Form(None),
     description_tag: str | None = Form(None),
     service: CollectionServices = Depends(collection_services_dp),

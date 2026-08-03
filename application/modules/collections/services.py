@@ -22,6 +22,12 @@ class CollectionServices:
     def __init__(self, repo: CollectionRepository):
         self.repo = repo
 
+    @staticmethod
+    def build_canonical_tag(request: Request, slug_tag: str | None):
+        if slug_tag is None:
+            return None
+        return f"{request.base_url}collections/{slug_tag}"
+
     async def public_get_collection_service(self, slug_tag: str, request: Request):
         collection_repository = await self.repo.public_get_collection_repository(
             slug_tag
@@ -40,6 +46,10 @@ class CollectionServices:
             slug_tag=collection_repository.slug_tag,
             title_tag=collection_repository.title_tag,
             description_tag=collection_repository.description_tag,
+            canonical_tag=self.build_canonical_tag(
+                request,
+                collection_repository.slug_tag,
+            ),
         )
 
     async def public_get_all_collections_service(
@@ -93,6 +103,10 @@ class CollectionServices:
                     "slug_tag": collection.slug_tag,
                     "title_tag": collection.title_tag,
                     "description_tag": collection.description_tag,
+                    "canonical_tag": self.build_canonical_tag(
+                        request,
+                        collection.slug_tag,
+                    ),
                 }
                 for collection in collection_repository
             ],
@@ -114,6 +128,10 @@ class CollectionServices:
             slug_tag=collection_repository.slug_tag,
             title_tag=collection_repository.title_tag,
             description_tag=collection_repository.description_tag,
+            canonical_tag=self.build_canonical_tag(
+                request,
+                collection_repository.slug_tag,
+            ),
             created_at=collection_repository.created_at,
             updated_at=collection_repository.updated_at,
         )
@@ -163,6 +181,10 @@ class CollectionServices:
                     "slug_tag": collection.slug_tag,
                     "title_tag": collection.title_tag,
                     "description_tag": collection.description_tag,
+                    "canonical_tag": self.build_canonical_tag(
+                        request,
+                        collection.slug_tag,
+                    ),
                     "created_at": collection.created_at,
                     "updated_at": collection.updated_at,
                 }
@@ -174,7 +196,7 @@ class CollectionServices:
         self,
         title: str,
         image: UploadFile,
-        slug_tag: str | None,
+        slug_tag: str,
         title_tag: str | None,
         description_tag: str | None,
         bg: BackgroundTasks,
@@ -201,9 +223,7 @@ class CollectionServices:
                 },
             )
 
-        if slug_tag and await self.repo.check_is_unique_slug_repository_for_create(
-            slug_tag
-        ):
+        if await self.repo.check_is_unique_slug_repository_for_create(slug_tag):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail={
