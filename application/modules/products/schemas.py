@@ -30,6 +30,7 @@ class PublicGetProductResponse(BaseModel):
     slug_tag: str | None
     title_tag: str | None
     description_tag: str | None
+    canonical_tag: str | None
     collection_id: int
     sub_collection_id: int | None
     product_information: list[PublicProductInformationResponse]
@@ -71,6 +72,7 @@ class GetProductResponse(BaseModel):
     slug_tag: str | None
     title_tag: str | None
     description_tag: str | None
+    canonical_tag: str | None
     collection_id: int
     sub_collection_id: int | None
     created_at: datetime

@@ -33,7 +33,14 @@ from application.modules.products.schemas import (
     SpecialGetAllProductsResponse,
     SpecialGetProductResponse,
 )
+from application.shared.env_variables import FRONTEND_URL
 from application.shared.storage import DiskManager
+
+
+def build_product_canonical_tag(slug_tag: str | None):
+    if slug_tag is None:
+        return None
+    return f"{FRONTEND_URL.rstrip('/')}/products/{slug_tag}"
 
 
 class PublicProductServices:
@@ -200,6 +207,7 @@ class PublicProductServices:
             slug_tag=product.slug_tag,
             title_tag=product.title_tag,
             description_tag=product.description_tag,
+            canonical_tag=build_product_canonical_tag(product.slug_tag),
             collection_id=product.collection_id,
             sub_collection_id=product.sub_collection_id,
             product_information=information_by_product.get(product.id, []),
@@ -311,6 +319,7 @@ class SpecialProductServices:
             slug_tag=product.slug_tag,
             title_tag=product.title_tag,
             description_tag=product.description_tag,
+            canonical_tag=build_product_canonical_tag(product.slug_tag),
             collection_id=product.collection_id,
             sub_collection_id=product.sub_collection_id,
             product_information=[
@@ -362,6 +371,9 @@ class ProductServices:
                 product_repository.price,
                 product_repository.discounted_price,
             ),
+            canonical_tag=build_product_canonical_tag(
+                product_repository.slug_tag
+            ),
             **product_repository._mapping,
         )
 
@@ -411,6 +423,7 @@ class ProductServices:
                         product.price,
                         product.discounted_price,
                     ),
+                    canonical_tag=build_product_canonical_tag(product.slug_tag),
                     **product._mapping,
                 )
                 for product in products
