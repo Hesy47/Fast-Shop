@@ -88,6 +88,21 @@ class Product(Base):
         nullable=False,
         default=ScrollType.none,
     )
+    slug_tag: Mapped[str] = mapped_column(
+        String(200),
+        nullable=True,
+        unique=True,
+    )
+
+    title_tag: Mapped[str] = mapped_column(
+        String(200),
+        nullable=True,
+    )
+
+    description_tag: Mapped[str] = mapped_column(
+        String(200),
+        nullable=True,
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime,

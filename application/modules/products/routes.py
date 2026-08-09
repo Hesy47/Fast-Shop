@@ -40,16 +40,16 @@ product_router = APIRouter(prefix="/api")
 
 
 @product_router.get(
-    path="/product/{id:int}",
+    path="/products/{slug_tag}",
     tags=["Product-Public"],
     response_model=PublicGetProductResponse,
 )
 async def public_get_product(
     request: Request,
-    id: int,
+    slug_tag: str,
     service: PublicProductServices = Depends(public_product_services_dp),
 ):
-    return await service.get_product_service(id, request)
+    return await service.get_product_service(slug_tag, request)
 
 
 @product_router.get(
@@ -80,16 +80,16 @@ async def public_get_all_products(
 
 
 @product_router.get(
-    path="/special-products/{id:int}",
+    path="/special-products/{slug_tag}",
     tags=["Product-Public"],
     response_model=SpecialGetProductResponse,
 )
 async def public_get_special_product(
     request: Request,
-    id: int,
+    slug_tag: str,
     service: SpecialProductServices = Depends(special_product_services_dp),
 ):
-    return await service.get_product_service(id, request)
+    return await service.get_product_service(slug_tag, request)
 
 
 @product_router.get(

@@ -46,8 +46,8 @@ class PublicProductServices:
             return 0
         return int((price - discounted_price) / price * 100)
 
-    async def get_product_service(self, product_id: int, request: Request):
-        product = await self.repo.get_product_repository(product_id)
+    async def get_product_service(self, slug_tag: str, request: Request):
+        product = await self.repo.get_product_repository(slug_tag)
 
         if not product:
             raise HTTPException(
@@ -197,6 +197,9 @@ class PublicProductServices:
             status=product.status,
             menu=product.menu,
             scroll=product.scroll,
+            slug_tag=product.slug_tag,
+            title_tag=product.title_tag,
+            description_tag=product.description_tag,
             collection_id=product.collection_id,
             sub_collection_id=product.sub_collection_id,
             product_information=information_by_product.get(product.id, []),
@@ -214,8 +217,8 @@ class SpecialProductServices:
             return 0
         return int((price - discounted_price) / price * 100)
 
-    async def get_product_service(self, product_id: int, request: Request):
-        product = await self.repo.get_product_repository(product_id)
+    async def get_product_service(self, slug_tag: str, request: Request):
+        product = await self.repo.get_product_repository(slug_tag)
 
         if not product:
             raise HTTPException(
@@ -305,6 +308,9 @@ class SpecialProductServices:
             status=product.status,
             menu=product.menu,
             scroll=product.scroll,
+            slug_tag=product.slug_tag,
+            title_tag=product.title_tag,
+            description_tag=product.description_tag,
             collection_id=product.collection_id,
             sub_collection_id=product.sub_collection_id,
             product_information=[
@@ -426,6 +432,19 @@ class ProductServices:
                 },
             )
 
+        if await self.repo.check_is_unique_slug_repository_for_create(
+            payload.slug_tag
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "field": "slug_tag",
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "type": "value_error",
+                    "error": "This slug is already taken",
+                },
+            )
+
         await self._validate_collection_ids(
             payload.collection_id,
             payload.sub_collection_id,
@@ -454,6 +473,23 @@ class ProductServices:
                     "status": status.HTTP_400_BAD_REQUEST,
                     "type": "value_error",
                     "error": "This title is already taken",
+                },
+            )
+
+        if (
+            payload.slug_tag
+            and await self.repo.check_is_unique_slug_repository_for_edit(
+                payload.slug_tag,
+                product_id,
+            )
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "field": "slug_tag",
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "type": "value_error",
+                    "error": "This slug is already taken",
                 },
             )
 

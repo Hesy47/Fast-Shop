@@ -40,13 +40,16 @@ class PublicProductRepository:
             Product.status,
             Product.menu,
             Product.scroll,
+            Product.slug_tag,
+            Product.title_tag,
+            Product.description_tag,
             Product.collection_id,
             Product.sub_collection_id,
         )
 
-    async def get_product_repository(self, product_id: int):
+    async def get_product_repository(self, slug_tag: str):
         get_query = select(*self._product_columns()).where(
-            and_(Product.id == product_id, Product.menu == "casual")
+            and_(Product.slug_tag == slug_tag, Product.menu == MenuType.casual)
         )
 
         get_operation = await self.session.execute(get_query)
@@ -216,6 +219,9 @@ class SpecialProductRepository:
                 Product.status,
                 Product.menu,
                 Product.scroll,
+                Product.slug_tag,
+                Product.title_tag,
+                Product.description_tag,
                 Product.collection_id,
                 Product.sub_collection_id,
             ),
@@ -230,10 +236,10 @@ class SpecialProductRepository:
             ),
         )
 
-    async def get_product_repository(self, product_id: int):
+    async def get_product_repository(self, slug_tag: str):
         get_query = self._with_related_data(
             select(Product).where(
-                Product.id == product_id,
+                Product.slug_tag == slug_tag,
                 Product.menu == MenuType.special,
             )
         )
@@ -316,6 +322,9 @@ class ProductRepository:
             Product.status,
             Product.menu,
             Product.scroll,
+            Product.slug_tag,
+            Product.title_tag,
+            Product.description_tag,
             Product.collection_id,
             Product.sub_collection_id,
             Product.created_at,
@@ -354,6 +363,9 @@ class ProductRepository:
                 Product.status,
                 Product.menu,
                 Product.scroll,
+                Product.slug_tag,
+                Product.title_tag,
+                Product.description_tag,
                 Product.collection_id,
                 Product.sub_collection_id,
                 Product.created_at,
@@ -372,6 +384,11 @@ class ProductRepository:
 
     async def check_is_unique_title_repository_for_create(self, title: str):
         unique_query = select(Product.id).where(Product.title == title)
+        unique_operation = await self.session.execute(unique_query)
+        return unique_operation.first()
+
+    async def check_is_unique_slug_repository_for_create(self, slug_tag: str):
+        unique_query = select(Product.id).where(Product.slug_tag == slug_tag)
         unique_operation = await self.session.execute(unique_query)
         return unique_operation.first()
 
@@ -403,6 +420,17 @@ class ProductRepository:
     ):
         unique_query = select(Product.id).where(
             and_(Product.title == title, Product.id != product_id)
+        )
+        unique_operation = await self.session.execute(unique_query)
+        return unique_operation.first()
+
+    async def check_is_unique_slug_repository_for_edit(
+        self,
+        slug_tag: str,
+        product_id: int,
+    ):
+        unique_query = select(Product.id).where(
+            and_(Product.slug_tag == slug_tag, Product.id != product_id)
         )
         unique_operation = await self.session.execute(unique_query)
         return unique_operation.first()

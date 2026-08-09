@@ -27,6 +27,9 @@ class PublicGetProductResponse(BaseModel):
     status: StatusType
     menu: MenuType
     scroll: ScrollType
+    slug_tag: str | None
+    title_tag: str | None
+    description_tag: str | None
     collection_id: int
     sub_collection_id: int | None
     product_information: list[PublicProductInformationResponse]
@@ -65,6 +68,9 @@ class GetProductResponse(BaseModel):
     status: StatusType
     menu: MenuType
     scroll: ScrollType
+    slug_tag: str | None
+    title_tag: str | None
+    description_tag: str | None
     collection_id: int
     sub_collection_id: int | None
     created_at: datetime
@@ -96,6 +102,9 @@ class CreateProductRequest(BaseModel):
     status: StatusType = StatusType.available
     menu: MenuType = MenuType.casual
     scroll: ScrollType = ScrollType.none
+    slug_tag: str
+    title_tag: str | None = None
+    description_tag: str | None = None
     collection_id: int
     sub_collection_id: int | None = None
 
@@ -108,6 +117,9 @@ class EditProductRequest(BaseModel):
     status: StatusType | None = None
     menu: MenuType | None = None
     scroll: ScrollType | None = None
+    slug_tag: str | None = None
+    title_tag: str | None = None
+    description_tag: str | None = None
     collection_id: int | None = None
     sub_collection_id: int | None = None
 
