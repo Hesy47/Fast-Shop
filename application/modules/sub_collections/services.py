@@ -14,6 +14,7 @@ from application.modules.sub_collections.schemas import (
     PublicGetAllSubCollectionsResponse,
     PublicGetSubCollectionResponse,
 )
+from application.shared.env_variables import FRONTEND_URL
 from application.shared.exceptions import CustomExceptionsHandlers
 from application.shared.storage import DiskManager
 
@@ -26,11 +27,9 @@ class SubCollectionServices:
     def build_canonical_tag(request: Request, slug_tag: str | None):
         if slug_tag is None:
             return None
-        return f"{request.base_url}sub-collections/{slug_tag}"
+        return f"{FRONTEND_URL}/sub-collections/{slug_tag}"
 
-    async def public_get_sub_collection_service(
-        self, slug_tag: str, request: Request
-    ):
+    async def public_get_sub_collection_service(self, slug_tag: str, request: Request):
         sub_collection_repository = (
             await self.repo.public_get_sub_collection_repository(slug_tag)
         )
