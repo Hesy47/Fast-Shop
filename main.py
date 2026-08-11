@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.staticfiles import StaticFiles
 
+from application.modules.banners.routes import banner_router
 from application.modules.collections.routes import collection_router
 from application.modules.products.routes import product_router
 from application.modules.sub_collections.routes import sub_collection_router
@@ -37,6 +38,7 @@ app.include_router(user_router)
 app.include_router(collection_router)
 app.include_router(sub_collection_router)
 app.include_router(product_router)
+app.include_router(banner_router)
 
 app.add_exception_handler(
     RequestValidationError, CustomExceptionsHandlers.pydantic_validation_handler

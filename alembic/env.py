@@ -12,6 +12,7 @@ from application.modules.users import models
 from application.modules.collections import models
 from application.modules.sub_collections import models
 from application.modules.products import models
+from application.modules.banners import models
 from application.shared import env_variables
 
 db_url = env_variables.DATABASE_URL
