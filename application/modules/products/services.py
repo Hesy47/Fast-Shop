@@ -53,8 +53,8 @@ class PublicProductServices:
             return 0
         return int((price - discounted_price) / price * 100)
 
-    async def get_product_service(self, slug_tag: str, request: Request):
-        product = await self.repo.get_product_repository(slug_tag)
+    async def get_product_service(self, product_id: int, request: Request):
+        product = await self.repo.get_product_repository(product_id)
 
         if not product:
             raise HTTPException(
@@ -225,8 +225,8 @@ class SpecialProductServices:
             return 0
         return int((price - discounted_price) / price * 100)
 
-    async def get_product_service(self, slug_tag: str, request: Request):
-        product = await self.repo.get_product_repository(slug_tag)
+    async def get_product_service(self, product_id: int, request: Request):
+        product = await self.repo.get_product_repository(product_id)
 
         if not product:
             raise HTTPException(
