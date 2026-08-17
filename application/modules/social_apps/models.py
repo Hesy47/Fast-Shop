@@ -3,9 +3,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from application.core.database import Base
 
-
-class Scroll(Base):
-    __tablename__ = "scrolls"
+class SocialApps(Base):
+    __tablename__ = "social_apps"
 
     id: Mapped[int] = mapped_column(
         BigInteger,
@@ -20,18 +19,7 @@ class Scroll(Base):
         unique=True,
     )
 
-    scroll: Mapped[str] = mapped_column(
-        String(200),
-        nullable=False,
-        unique=True,
-    )
-
     link: Mapped[str] = mapped_column(
-        String(200),
-        nullable=False,
-    )
-
-    query: Mapped[str] = mapped_column(
         String(300),
         nullable=False,
     )
@@ -49,5 +37,5 @@ class Scroll(Base):
         nullable=False,
     )
 
-    def str(self) -> str:
+    def __str__(self):
         return self.title

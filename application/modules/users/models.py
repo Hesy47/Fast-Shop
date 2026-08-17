@@ -32,7 +32,6 @@ class User(Base):
         String(11),
         nullable=False,
         unique=True,
-        index=True,
     )
 
     password: Mapped[str] = mapped_column(
