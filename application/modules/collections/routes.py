@@ -12,15 +12,15 @@ collection_router = APIRouter(prefix="/api")
 
 
 @collection_router.get(
-    path="/collections/{slug_tag}",
+    path="/collections/{id:int}",
     tags=["Collection-Public"],
 )
 async def public_get_collection(
     request: Request,
-    slug_tag: str,
+    id: int,
     service: CollectionServices = Depends(collection_services_dp),
 ):
-    return await service.public_get_collection_service(slug_tag, request)
+    return await service.public_get_collection_service(id, request)
 
 
 @collection_router.get(

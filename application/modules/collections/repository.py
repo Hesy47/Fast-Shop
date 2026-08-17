@@ -14,7 +14,7 @@ class CollectionRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def public_get_collection_repository(self, slug_tag: str):
+    async def public_get_collection_repository(self, collection_id: int):
         get_query = select(
             Collection.id,
             Collection.title,
@@ -22,7 +22,7 @@ class CollectionRepository:
             Collection.slug_tag,
             Collection.title_tag,
             Collection.description_tag,
-        ).where(Collection.slug_tag == slug_tag)
+        ).where(Collection.id == collection_id)
 
         get_operation = await self.session.execute(get_query)
         get_result = get_operation.first()

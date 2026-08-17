@@ -29,9 +29,13 @@ class CollectionServices:
             return None
         return f"{FRONTEND_URL}/collections/{slug_tag}"
 
-    async def public_get_collection_service(self, slug_tag: str, request: Request):
+    async def public_get_collection_service(
+        self,
+        collection_id: int,
+        request: Request,
+    ):
         collection_repository = await self.repo.public_get_collection_repository(
-            slug_tag
+            collection_id
         )
 
         if not collection_repository:
