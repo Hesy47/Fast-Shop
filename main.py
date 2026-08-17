@@ -12,6 +12,7 @@ from application.modules.scrolls.routes import scroll_router
 from application.modules.social_apps.routes import social_app_router
 from application.modules.sub_collections.routes import sub_collection_router
 from application.modules.users.routes import user_router
+from application.shared.env_variables import DEBUG
 from application.shared.exceptions import CustomExceptionsHandlers
 from application.shared.storage import DiskManager
 
@@ -49,4 +50,8 @@ app.add_exception_handler(
 )
 
 if __name__ == "__main__":
-    uvicorn.run(app="main:app", host="127.0.0.1", port=8000)
+    print(DEBUG)
+    if DEBUG:
+        uvicorn.run(app="main:app", host="127.0.0.1", port=8000)
+    if not DEBUG:
+        uvicorn.run(app="main:app", host="0.0.0.0", port=8000)
