@@ -17,7 +17,7 @@ class SubCollectionRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def public_get_sub_collection_repository(self, slug_tag: str):
+    async def public_get_sub_collection_repository(self, sub_collection_id: int):
         get_query = select(
             SubCollection.id,
             SubCollection.title,
@@ -25,7 +25,7 @@ class SubCollectionRepository:
             SubCollection.slug_tag,
             SubCollection.title_tag,
             SubCollection.description_tag,
-        ).where(SubCollection.slug_tag == slug_tag)
+        ).where(SubCollection.id == sub_collection_id)
 
         get_operation = await self.session.execute(get_query)
         get_result = get_operation.first()

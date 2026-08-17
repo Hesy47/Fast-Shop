@@ -29,9 +29,13 @@ class SubCollectionServices:
             return None
         return f"{FRONTEND_URL}/sub-collections/{slug_tag}"
 
-    async def public_get_sub_collection_service(self, slug_tag: str, request: Request):
+    async def public_get_sub_collection_service(
+        self,
+        sub_collection_id: int,
+        request: Request,
+    ):
         sub_collection_repository = (
-            await self.repo.public_get_sub_collection_repository(slug_tag)
+            await self.repo.public_get_sub_collection_repository(sub_collection_id)
         )
 
         if not sub_collection_repository:

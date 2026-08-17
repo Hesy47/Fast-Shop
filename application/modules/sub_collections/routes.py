@@ -14,15 +14,18 @@ sub_collection_router = APIRouter(prefix="/api")
 
 
 @sub_collection_router.get(
-    path="/sub-collections/{slug_tag}",
+    path="/sub-collections/{id:int}",
     tags=["Sub-Collection-Public"],
 )
 async def public_get_sub_collection(
     request: Request,
-    slug_tag: str,
+    id: int,
     service: SubCollectionServices = Depends(sub_collection_services_dp),
 ):
-    return await service.public_get_sub_collection_service(slug_tag, request)
+    return await service.public_get_sub_collection_service(
+        id,
+        request,
+    )
 
 
 @sub_collection_router.get(
