@@ -1,6 +1,6 @@
 from sqlalchemy import and_, asc, delete, desc, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import load_only, selectinload
+from sqlalchemy.orm import joinedload, load_only, selectinload
 
 from application.modules.collections.models import Collection
 from application.modules.products.models import (
@@ -47,8 +47,23 @@ class PublicProductRepository:
             Product.sub_collection_id,
         )
 
+    @classmethod
+    def _select_with_collection_titles(cls):
+        return (
+            select(
+                *cls._product_columns(),
+                Collection.title.label("collection_title"),
+                SubCollection.title.label("sub_collection_title"),
+            )
+            .join(Collection, Product.collection_id == Collection.id)
+            .outerjoin(
+                SubCollection,
+                Product.sub_collection_id == SubCollection.id,
+            )
+        )
+
     async def get_product_repository(self, product_id: int):
-        get_query = select(*self._product_columns()).where(
+        get_query = self._select_with_collection_titles().where(
             and_(Product.id == product_id, Product.menu == MenuType.casual)
         )
 
@@ -156,7 +171,7 @@ class PublicProductRepository:
         min_price: int,
         max_price: int,
     ):
-        get_all_query = select(*self._product_columns())
+        get_all_query = self._select_with_collection_titles()
         get_all_query = self._apply_filters(
             get_all_query,
             search,
@@ -224,6 +239,12 @@ class SpecialProductRepository:
                 Product.description_tag,
                 Product.collection_id,
                 Product.sub_collection_id,
+            ),
+            joinedload(Product.collection, innerjoin=True).load_only(
+                Collection.title,
+            ),
+            joinedload(Product.sub_collection).load_only(
+                SubCollection.title,
             ),
             selectinload(Product.images).load_only(
                 ProductImage.id,

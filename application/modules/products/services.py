@@ -210,7 +210,9 @@ class PublicProductServices:
             description_tag=product.description_tag,
             canonical_tag=build_product_canonical_tag(product.slug_tag),
             collection_id=product.collection_id,
+            collection_title=product.collection_title,
             sub_collection_id=product.sub_collection_id,
+            sub_collection_title=product.sub_collection_title,
             product_information=information_by_product.get(product.id, []),
             gallery_set=gallery_by_product.get(product.id, []),
         )
@@ -323,7 +325,13 @@ class SpecialProductServices:
             description_tag=product.description_tag,
             canonical_tag=build_product_canonical_tag(product.slug_tag),
             collection_id=product.collection_id,
+            collection_title=product.collection.title,
             sub_collection_id=product.sub_collection_id,
+            sub_collection_title=(
+                product.sub_collection.title
+                if product.sub_collection is not None
+                else None
+            ),
             product_information=[
                 {
                     "id": information.id,

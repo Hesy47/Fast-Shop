@@ -32,7 +32,9 @@ class PublicGetProductResponse(BaseModel):
     description_tag: str | None
     canonical_tag: str | None
     collection_id: int
+    collection_title: str
     sub_collection_id: int | None
+    sub_collection_title: str | None
     product_information: list[PublicProductInformationResponse]
     gallery_set: list[PublicProductGalleryResponse]
 
