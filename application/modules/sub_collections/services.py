@@ -31,11 +31,11 @@ class SubCollectionServices:
 
     async def public_get_sub_collection_service(
         self,
-        sub_collection_id: int,
+        slug_tag: str,
         request: Request,
     ):
         sub_collection_repository = (
-            await self.repo.public_get_sub_collection_repository(sub_collection_id)
+            await self.repo.public_get_sub_collection_repository(slug_tag)
         )
 
         if not sub_collection_repository:

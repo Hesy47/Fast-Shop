@@ -31,11 +31,11 @@ class CollectionServices:
 
     async def public_get_collection_service(
         self,
-        collection_id: int,
+        slug_tag: str,
         request: Request,
     ):
         collection_repository = await self.repo.public_get_collection_repository(
-            collection_id
+            slug_tag
         )
 
         if not collection_repository:
