@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from application.modules.banners.routes import banner_router
@@ -37,6 +38,14 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(user_router)
 app.include_router(collection_router)
 app.include_router(sub_collection_router)
@@ -50,8 +59,8 @@ app.add_exception_handler(
 )
 
 if __name__ == "__main__":
-    print(DEBUG)
     if DEBUG:
         uvicorn.run(app="main:app", host="127.0.0.1", port=8000)
+
     if not DEBUG:
         uvicorn.run(app="main:app", host="0.0.0.0", port=8000)

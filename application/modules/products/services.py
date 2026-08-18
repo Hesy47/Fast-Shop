@@ -48,10 +48,11 @@ class PublicProductServices:
         self.repo = repo
 
     @staticmethod
-    def calculate_discount_percent(price: int, discounted_price: int) -> int:
+    def calculate_discount_percent(price: int, discounted_price: int) -> str:
         if price == 0:
-            return 0
-        return int((price - discounted_price) / price * 100)
+            return "0 %"
+        discount_percent = int((price - discounted_price) / price * 100)
+        return f"{discount_percent} %"
 
     async def get_product_service(self, product_id: int, request: Request):
         product = await self.repo.get_product_repository(product_id)
@@ -220,10 +221,11 @@ class SpecialProductServices:
         self.repo = repo
 
     @staticmethod
-    def calculate_discount_percent(price: int, discounted_price: int) -> int:
+    def calculate_discount_percent(price: int, discounted_price: int) -> str:
         if price == 0:
-            return 0
-        return int((price - discounted_price) / price * 100)
+            return "0 %"
+        discount_percent = int((price - discounted_price) / price * 100)
+        return f"{discount_percent} %"
 
     async def get_product_service(self, product_id: int, request: Request):
         product = await self.repo.get_product_repository(product_id)
