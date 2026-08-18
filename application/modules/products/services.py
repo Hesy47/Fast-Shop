@@ -54,8 +54,8 @@ class PublicProductServices:
         discount_percent = int((price - discounted_price) / price * 100)
         return f"{discount_percent} %"
 
-    async def get_product_service(self, product_id: int, request: Request):
-        product = await self.repo.get_product_repository(product_id)
+    async def get_product_service(self, slug_tag: str, request: Request):
+        product = await self.repo.get_product_repository(slug_tag)
 
         if not product:
             raise HTTPException(
@@ -229,8 +229,8 @@ class SpecialProductServices:
         discount_percent = int((price - discounted_price) / price * 100)
         return f"{discount_percent} %"
 
-    async def get_product_service(self, product_id: int, request: Request):
-        product = await self.repo.get_product_repository(product_id)
+    async def get_product_service(self, slug_tag: str, request: Request):
+        product = await self.repo.get_product_repository(slug_tag)
 
         if not product:
             raise HTTPException(

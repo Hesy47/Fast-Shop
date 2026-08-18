@@ -62,9 +62,9 @@ class PublicProductRepository:
             )
         )
 
-    async def get_product_repository(self, product_id: int):
+    async def get_product_repository(self, slug_tag: str):
         get_query = self._select_with_collection_titles().where(
-            and_(Product.id == product_id, Product.menu == MenuType.casual)
+            and_(Product.slug_tag == slug_tag, Product.menu == MenuType.casual)
         )
 
         get_operation = await self.session.execute(get_query)
@@ -257,10 +257,10 @@ class SpecialProductRepository:
             ),
         )
 
-    async def get_product_repository(self, product_id: int):
+    async def get_product_repository(self, slug_tag: str):
         get_query = self._with_related_data(
             select(Product).where(
-                Product.id == product_id,
+                Product.slug_tag == slug_tag,
                 Product.menu == MenuType.special,
             )
         )
