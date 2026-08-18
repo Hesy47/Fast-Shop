@@ -146,6 +146,9 @@ class PublicScrollRepository:
                 Product.status,
                 Product.menu,
                 Product.scroll,
+                Product.slug_tag,
+                Product.title_tag,
+                Product.description_tag,
             ),
             selectinload(Product.images).load_only(
                 ProductImage.id,

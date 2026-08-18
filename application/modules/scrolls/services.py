@@ -199,6 +199,9 @@ class PublicScrollServices:
             status=product.status,
             menu=product.menu,
             scroll=product.scroll,
+            slug_tag=product.slug_tag,
+            title_tag=product.title_tag,
+            description_tag=product.description_tag,
             gallery_set=[
                 {
                     "id": image.id,

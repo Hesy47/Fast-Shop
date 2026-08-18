@@ -57,6 +57,9 @@ class PublicGetScrollProductResponse(BaseModel):
     status: StatusType
     menu: MenuType
     scroll: ScrollType
+    slug_tag: str | None
+    title_tag: str | None
+    description_tag: str | None
     gallery_set: list[PublicScrollProductGalleryResponse]
 
 
