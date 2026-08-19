@@ -53,7 +53,7 @@ class PublicGetScrollProductResponse(BaseModel):
     title: str
     price: int
     discounted_price: int
-    discount_percent: int
+    discount_percent: str
     status: StatusType
     menu: MenuType
     scroll: ScrollType

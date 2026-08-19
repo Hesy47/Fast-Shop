@@ -181,10 +181,11 @@ class PublicScrollServices:
         return scroll.strip().lower().replace("-", "_")
 
     @staticmethod
-    def _calculate_discount_percent(price: int, discounted_price: int):
+    def _calculate_discount_percent(price: int, discounted_price: int) -> str:
         if price == 0:
-            return 0
-        return int((price - discounted_price) / price * 100)
+            return "0 %"
+        discount_percent = int((price - discounted_price) / price * 100)
+        return f"{discount_percent} %"
 
     @classmethod
     def _build_product_response(cls, product: object, request: Request):
