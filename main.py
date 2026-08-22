@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from application.modules.banners.routes import banner_router
 from application.modules.collections.routes import collection_router
 from application.modules.products.routes import product_router
+from application.modules.questions.routes import question_router
 from application.modules.scrolls.routes import scroll_router
 from application.modules.social_apps.routes import social_app_router
 from application.modules.sub_collections.routes import sub_collection_router
@@ -53,6 +54,7 @@ app.include_router(product_router)
 app.include_router(banner_router)
 app.include_router(scroll_router)
 app.include_router(social_app_router)
+app.include_router(question_router)
 
 app.add_exception_handler(
     RequestValidationError, CustomExceptionsHandlers.pydantic_validation_handler

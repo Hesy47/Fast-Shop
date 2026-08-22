@@ -15,6 +15,7 @@ from application.modules.products import models
 from application.modules.banners import models
 from application.modules.scrolls import models
 from application.modules.social_apps import models
+from application.modules.questions import models
 from application.shared import env_variables
 
 db_url = env_variables.DATABASE_URL
