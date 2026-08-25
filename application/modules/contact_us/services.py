@@ -24,7 +24,9 @@ class ContactUsServices:
     ):
         await self.repo.create_contact_us_repository(payload)
         return JSONResponse(
-            content={"message": "Your ticket has been submitted successfully"},
+            content={
+                "message": "تیکت شما با موفقیت ثبت شد، بزودی کارشناسان ما با شما تماس خواهند گرفت"
+            },
             status_code=status.HTTP_201_CREATED,
         )
 
