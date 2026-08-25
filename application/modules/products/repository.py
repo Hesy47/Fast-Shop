@@ -24,6 +24,8 @@ class PublicProductRepository:
     VALID_ORDERING_CHOICES = {
         "id": asc(Product.id),
         "-id": desc(Product.id),
+        "price": asc(Product.discounted_price),
+        "-price": desc(Product.discounted_price),
     }
 
     def __init__(self, session: AsyncSession):
@@ -196,6 +198,8 @@ class SpecialProductRepository:
     VALID_ORDERING_CHOICES = {
         "id": asc(Product.id),
         "-id": desc(Product.id),
+        "price": asc(Product.discounted_price),
+        "-price": desc(Product.discounted_price),
     }
 
     def __init__(self, session: AsyncSession):
