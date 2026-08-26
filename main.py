@@ -12,7 +12,6 @@ from application.modules.contact_us.routes import contact_us_router
 from application.modules.products.routes import product_router
 from application.modules.questions.routes import question_router
 from application.modules.scrolls.routes import scroll_router
-from application.modules.social_apps.routes import social_app_router
 from application.modules.sub_collections.routes import sub_collection_router
 from application.modules.users.routes import user_router
 from application.shared.env_variables import DEBUG
@@ -54,7 +53,6 @@ app.include_router(sub_collection_router)
 app.include_router(product_router)
 app.include_router(banner_router)
 app.include_router(scroll_router)
-app.include_router(social_app_router)
 app.include_router(question_router)
 app.include_router(contact_us_router)
 
