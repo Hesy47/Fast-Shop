@@ -1,7 +1,8 @@
 from sqlalchemy import and_, asc, delete, desc, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import load_only, selectinload
+from sqlalchemy.orm import joinedload, load_only, selectinload
 
+from application.modules.collections.models import Collection
 from application.modules.products.models import (
     Product,
     ProductImage,
@@ -149,6 +150,10 @@ class PublicScrollRepository:
                 Product.slug_tag,
                 Product.title_tag,
                 Product.description_tag,
+                Product.collection_id,
+            ),
+            joinedload(Product.collection, innerjoin=True).load_only(
+                Collection.title,
             ),
             selectinload(Product.images).load_only(
                 ProductImage.id,

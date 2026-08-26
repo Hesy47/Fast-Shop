@@ -60,6 +60,7 @@ class PublicGetScrollProductResponse(BaseModel):
     slug_tag: str | None
     title_tag: str | None
     description_tag: str | None
+    collection_title: str
     gallery_set: list[PublicScrollProductGalleryResponse]
 
 

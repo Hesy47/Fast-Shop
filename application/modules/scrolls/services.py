@@ -203,6 +203,7 @@ class PublicScrollServices:
             slug_tag=product.slug_tag,
             title_tag=product.title_tag,
             description_tag=product.description_tag,
+            collection_title=product.collection.title,
             gallery_set=[
                 {
                     "id": image.id,
