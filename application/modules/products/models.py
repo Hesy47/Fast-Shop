@@ -17,9 +17,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from application.core.database import Base
 
-
-from application.modules.collections.models import Collection
-from application.modules.sub_collections.models import SubCollection
+if TYPE_CHECKING:
+    from application.modules.collections.models import Collection
+    from application.modules.sub_collections.models import SubCollection
 
 
 class StatusType(str, PythonEnum):
@@ -130,12 +130,12 @@ class Product(Base):
         server_onupdate=func.now(),
     )
 
-    collection: Mapped[Collection] = relationship(
+    collection: Mapped["Collection"] = relationship(
         "Collection",
         back_populates="products",
     )
 
-    sub_collection: Mapped[SubCollection] = relationship(
+    sub_collection: Mapped["SubCollection"] = relationship(
         "SubCollection",
         back_populates="products",
     )
