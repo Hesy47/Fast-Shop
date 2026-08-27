@@ -17,9 +17,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from application.core.database import Base
 
-if TYPE_CHECKING:
-    from application.modules.collections.models import Collection
-    from application.modules.sub_collections.models import SubCollection
+
+from application.modules.collections.models import Collection
+from application.modules.sub_collections.models import SubCollection
 
 
 class StatusType(str, PythonEnum):

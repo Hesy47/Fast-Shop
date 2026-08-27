@@ -6,8 +6,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from application.core.database import Base
 
-if TYPE_CHECKING:
-    from application.modules.products.models import Product
+
+from application.modules.products.models import Product
 
 
 class Collection(Base):
