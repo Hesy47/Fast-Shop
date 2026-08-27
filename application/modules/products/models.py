@@ -140,12 +140,12 @@ class Product(Base):
         back_populates="products",
     )
 
-    images: Mapped[list[ProductImage]] = relationship(
+    images: Mapped[list["ProductImage"]] = relationship(
         "ProductImage",
         back_populates="product",
     )
 
-    information: Mapped[list[ProductInformation]] = relationship(
+    information: Mapped[list["ProductInformation"]] = relationship(
         "ProductInformation",
         back_populates="product",
     )
