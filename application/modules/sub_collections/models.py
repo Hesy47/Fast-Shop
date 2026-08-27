@@ -1,0 +1,71 @@
+from datetime import datetime
+from typing import TYPE_CHECKING
+
+from sqlalchemy import BigInteger, DateTime, String, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from application.core.database import Base
+
+if TYPE_CHECKING:
+    from application.modules.products.models import Product
+
+
+class SubCollection(Base):
+    __tablename__ = "sub_collections"
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True,
+        autoincrement=True,
+        nullable=False,
+    )
+
+    title: Mapped[str] = mapped_column(
+        String(200),
+        nullable=False,
+        unique=True,
+    )
+
+    image: Mapped[str] = mapped_column(
+        String(200),
+        nullable=False,
+        unique=True,
+    )
+
+    slug_tag: Mapped[str] = mapped_column(
+        String(200),
+        nullable=True,
+        unique=True,
+    )
+
+    title_tag: Mapped[str] = mapped_column(
+        String(200),
+        nullable=True,
+    )
+
+    description_tag: Mapped[str] = mapped_column(
+        String(200),
+        nullable=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.now,
+        server_default=func.now(),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.now,
+        onupdate=datetime.now,
+        server_default=func.now(),
+        server_onupdate=func.now(),
+    )
+
+    products: Mapped[list[Product]] = relationship(
+        "Product",
+        back_populates="sub_collection",
+    )
+
+    def __str__(self):
+        return self.title

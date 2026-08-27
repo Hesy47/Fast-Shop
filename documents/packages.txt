@@ -1,0 +1,12 @@
+"fastapi[standard]"
+"sqlalchemy[asyncio]"
+"redis[hiredis]"
+asyncpg
+pillow
+alembic
+argon2-cffi
+pyJWT
+jdatetime
+aiofiles
+python-magic
+tzdata
