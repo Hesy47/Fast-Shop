@@ -1,8 +1,8 @@
 """one
 
-Revision ID: de2d81967031
+Revision ID: 3e6fb0a6b4f3
 Revises:
-Create Date: 2026-08-17 15:49:10.609451
+Create Date: 2026-08-27 09:46:22.891239
 
 """
 
@@ -12,7 +12,7 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision: str = "de2d81967031"
+revision: str = "3e6fb0a6b4f3"
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -38,6 +38,20 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("image"),
         sa.UniqueConstraint("title"),
+    )
+    op.create_table(
+        "contact_us",
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
+        sa.Column("phone_number", sa.String(length=11), nullable=False),
+        sa.Column("subject", sa.String(length=180), nullable=False),
+        sa.Column("message", sa.Text(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False
+        ),
+        sa.PrimaryKeyConstraint("id"),
     )
     op.create_table(
         "desktop_banners",
@@ -70,6 +84,20 @@ def upgrade() -> None:
         sa.UniqueConstraint("title"),
     )
     op.create_table(
+        "questions",
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
+        sa.Column("question", sa.String(length=255), nullable=False),
+        sa.Column("answer", sa.Text(), nullable=False),
+        sa.Column("question_place", sa.String(length=100), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False
+        ),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_table(
         "scrolls",
         sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("title", sa.String(length=200), nullable=False),
@@ -84,20 +112,6 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("scroll"),
-        sa.UniqueConstraint("title"),
-    )
-    op.create_table(
-        "social_apps",
-        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
-        sa.Column("title", sa.String(length=200), nullable=False),
-        sa.Column("link", sa.String(length=300), nullable=False),
-        sa.Column(
-            "created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
-        sa.Column(
-            "updated_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
-        sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("title"),
     )
     op.create_table(
@@ -231,13 +245,16 @@ def downgrade() -> None:
     op.drop_table("products")
     op.drop_table("users")
     op.drop_table("sub_collections")
-    op.drop_table("social_apps")
     op.drop_table("scrolls")
+    op.drop_table("questions")
     op.drop_table("phone_banners")
     op.drop_table("desktop_banners")
+    op.drop_table("contact_us")
     op.drop_table("collections")
-    op.execute("DROP TYPE statustype")
-    op.execute("DROP TYPE menutype")
-    op.execute("DROP TYPE scrolltype")
-    op.execute("DROP TYPE usertype")
     # ### end Alembic commands ###
+
+    # Drop PostgreSQL enum types
+    op.execute("DROP TYPE IF EXISTS scrolltype")
+    op.execute("DROP TYPE IF EXISTS menutype")
+    op.execute("DROP TYPE IF EXISTS statustype")
+    op.execute("DROP TYPE IF EXISTS usertype")
