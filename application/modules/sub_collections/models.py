@@ -62,7 +62,7 @@ class SubCollection(Base):
         server_onupdate=func.now(),
     )
 
-    products: Mapped[list[Product]] = relationship(
+    products: Mapped[list["Product"]] = relationship(
         "Product",
         back_populates="sub_collection",
     )

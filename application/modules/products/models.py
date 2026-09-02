@@ -130,22 +130,22 @@ class Product(Base):
         server_onupdate=func.now(),
     )
 
-    collection: Mapped[Collection] = relationship(
+    collection: Mapped["Collection"] = relationship(
         "Collection",
         back_populates="products",
     )
 
-    sub_collection: Mapped[SubCollection] = relationship(
+    sub_collection: Mapped["SubCollection"] = relationship(
         "SubCollection",
         back_populates="products",
     )
 
-    images: Mapped[list[ProductImage]] = relationship(
+    images: Mapped[list["ProductImage"]] = relationship(
         "ProductImage",
         back_populates="product",
     )
 
-    information: Mapped[list[ProductInformation]] = relationship(
+    information: Mapped[list["ProductInformation"]] = relationship(
         "ProductInformation",
         back_populates="product",
     )
