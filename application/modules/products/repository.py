@@ -83,7 +83,7 @@ class PublicProductRepository:
                 ProductImage.product_id,
             )
             .where(ProductImage.product_id.in_(product_ids))
-            .order_by(ProductImage.id)
+            .order_by(desc(ProductImage.id))
         )
 
         images_operation = await self.session.execute(images_query)
