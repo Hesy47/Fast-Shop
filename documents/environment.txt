@@ -3,3 +3,5 @@ DATABASE_URL=postgresql+asyncpg://user:password@host:port/dbname
 
 JWT_ACCESS_TOKEN_SECRET= token_urlsafe() or use terminal.py
 JWT_REFRESH_TOKEN_SECRET= token_urlsafe() or use terminal.py
+
+FRONTEND_URL=your frontend base url
