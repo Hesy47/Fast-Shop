@@ -1,6 +1,9 @@
 from sqlalchemy import and_, asc, delete, desc, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload, load_only, selectinload
 
+from application.modules.collections.models import Collection
+from application.modules.products.models import Product, ProductImage
 from application.modules.sub_collections.models import SubCollection
 from application.modules.sub_collections.schemas import (
     CreateSubCollectionRequest,
@@ -12,6 +15,12 @@ class SubCollectionRepository:
     VALID_ORDERING_CHOICES = {
         "id": asc(SubCollection.id),
         "-id": desc(SubCollection.id),
+    }
+    VALID_PRODUCT_ORDERING_CHOICES = {
+        "id": asc(Product.id),
+        "-id": desc(Product.id),
+        "price": asc(Product.discounted_price),
+        "-price": desc(Product.discounted_price),
     }
 
     def __init__(self, session: AsyncSession):
@@ -31,6 +40,121 @@ class SubCollectionRepository:
         get_result = get_operation.first()
 
         return get_result
+
+    @staticmethod
+    def _apply_public_product_filters(
+        query,
+        sub_collection_id: int,
+        requested_collection_id: int | None,
+        requested_sub_collection_id: int | None,
+        has_discount: bool | None,
+        min_price: int,
+        max_price: int,
+        search: str,
+    ):
+        query = query.where(
+            Product.sub_collection_id == sub_collection_id,
+            Product.discounted_price.between(min_price, max_price),
+        )
+
+        if requested_collection_id is not None:
+            query = query.where(Product.collection_id == requested_collection_id)
+
+        if requested_sub_collection_id is not None:
+            query = query.where(
+                Product.sub_collection_id == requested_sub_collection_id
+            )
+
+        if has_discount is True:
+            query = query.where(Product.discounted_price < Product.price)
+        elif has_discount is False:
+            query = query.where(Product.discounted_price >= Product.price)
+
+        if search:
+            query = query.where(Product.title.ilike(f"%{search}%"))
+
+        return query
+
+    async def count_public_sub_collection_products(
+        self,
+        sub_collection_id: int,
+        requested_collection_id: int | None,
+        requested_sub_collection_id: int | None,
+        has_discount: bool | None,
+        min_price: int,
+        max_price: int,
+        search: str,
+    ):
+        count_query = self._apply_public_product_filters(
+            select(func.count(Product.id)),
+            sub_collection_id,
+            requested_collection_id,
+            requested_sub_collection_id,
+            has_discount,
+            min_price,
+            max_price,
+            search,
+        )
+        count_operation = await self.session.execute(count_query)
+        return count_operation.scalar_one()
+
+    async def public_get_sub_collection_products_repository(
+        self,
+        sub_collection_id: int,
+        requested_collection_id: int | None,
+        requested_sub_collection_id: int | None,
+        has_discount: bool | None,
+        min_price: int,
+        max_price: int,
+        search: str,
+        order_by: str,
+        limit: int,
+        offset: int,
+    ):
+        products_query = self._apply_public_product_filters(
+            select(Product),
+            sub_collection_id,
+            requested_collection_id,
+            requested_sub_collection_id,
+            has_discount,
+            min_price,
+            max_price,
+            search,
+        ).options(
+            load_only(
+                Product.id,
+                Product.title,
+                Product.description,
+                Product.price,
+                Product.discounted_price,
+                Product.status,
+                Product.menu,
+                Product.scroll,
+                Product.slug_tag,
+                Product.title_tag,
+                Product.description_tag,
+                Product.collection_id,
+                Product.sub_collection_id,
+            ),
+            joinedload(Product.collection, innerjoin=True).load_only(
+                Collection.title
+            ),
+            selectinload(Product.images).load_only(
+                ProductImage.id,
+                ProductImage.image,
+            ),
+        )
+        products_query = (
+            products_query.order_by(self.VALID_PRODUCT_ORDERING_CHOICES[order_by])
+            .limit(limit)
+            .offset(offset)
+        )
+
+        products_operation = await self.session.execute(products_query)
+        return products_operation.scalars().all()
+
+    async def valid_product_order_by(self, order_by: str):
+        return order_by in self.VALID_PRODUCT_ORDERING_CHOICES
 
     async def public_get_all_sub_collections_repository(
         self,

@@ -4,6 +4,7 @@ from pydantic import ValidationError
 
 from application.modules.sub_collections.pagination import (
     CustomSubCollectionPaginationResponse,
+    PublicSubCollectionProductPaginationResponse,
 )
 from application.modules.sub_collections.repository import SubCollectionRepository
 from application.modules.sub_collections.schemas import (
@@ -11,6 +12,7 @@ from application.modules.sub_collections.schemas import (
     EditSubCollectionRequest,
     GetAllSubCollectionsResponse,
     GetSubCollectionResponse,
+    PublicSubCollectionProductResponse,
     PublicGetAllSubCollectionsResponse,
     PublicGetSubCollectionResponse,
 )
@@ -29,10 +31,35 @@ class SubCollectionServices:
             return None
         return f"{FRONTEND_URL}/sub-collections/{slug_tag}"
 
+    @staticmethod
+    def build_product_canonical_tag(slug_tag: str | None):
+        if slug_tag is None:
+            return None
+        return f"{FRONTEND_URL.rstrip('/')}/products/{slug_tag}"
+
+    @staticmethod
+    def calculate_discount_percent(price: int, discounted_price: int) -> str:
+        if price == 0:
+            return "0 %"
+        discount_percent = int((price - discounted_price) / price * 100)
+        return f"{discount_percent} %"
+
     async def public_get_sub_collection_service(
         self,
         slug_tag: str,
+        page: int,
+        per_page: int,
+        order_by: str,
+        search: str,
+        requested_collection_id: int | None,
+        requested_sub_collection_id: int | None,
+        has_discount: bool | None,
+        min_price: int,
+        max_price: int,
+        limit: int,
+        offset: int,
         request: Request,
+        route_path: str,
     ):
         sub_collection_repository = (
             await self.repo.public_get_sub_collection_repository(slug_tag)
@@ -43,6 +70,50 @@ class SubCollectionServices:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="We do not have such this sub collection",
             )
+
+        if not await self.repo.valid_product_order_by(order_by):
+            raise HTTPException(
+                detail=(
+                    "valid order_by choices are: "
+                    f"{list(self.repo.VALID_PRODUCT_ORDERING_CHOICES.keys())}"
+                ),
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if min_price > max_price:
+            raise HTTPException(
+                detail="min_price cannot be greater than max_price",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        product_filter_arguments = (
+            sub_collection_repository.id,
+            requested_collection_id,
+            requested_sub_collection_id,
+            has_discount,
+            min_price,
+            max_price,
+            search,
+        )
+        total_products = await self.repo.count_public_sub_collection_products(
+            *product_filter_arguments
+        )
+        products = await self.repo.public_get_sub_collection_products_repository(
+            *product_filter_arguments,
+            order_by,
+            limit,
+            offset,
+        )
+        pagination = PublicSubCollectionProductPaginationResponse(
+            page,
+            per_page,
+            limit,
+            offset,
+            request.base_url,
+            route_path,
+            total_products,
+            request.query_params,
+        )
 
         return PublicGetSubCollectionResponse(
             id=sub_collection_repository.id,
@@ -55,6 +126,59 @@ class SubCollectionServices:
                 request,
                 sub_collection_repository.slug_tag,
             ),
+            count=total_products,
+            next=pagination.the_next(),
+            previous=pagination.the_previous(),
+            total_pages=pagination.total_pages(),
+            current_page=page,
+            results=[
+                self._build_public_sub_collection_product_response(
+                    product,
+                    sub_collection_repository.title,
+                    request,
+                )
+                for product in products
+            ],
+        )
+
+    def _build_public_sub_collection_product_response(
+        self,
+        product,
+        sub_collection_title: str,
+        request: Request,
+    ):
+        return PublicSubCollectionProductResponse(
+            id=product.id,
+            title=product.title,
+            description=product.description,
+            price=product.price,
+            discounted_price=product.discounted_price,
+            discount_percent=self.calculate_discount_percent(
+                product.price,
+                product.discounted_price,
+            ),
+            status=product.status,
+            menu=product.menu,
+            scroll=product.scroll,
+            slug_tag=product.slug_tag,
+            title_tag=product.title_tag,
+            description_tag=product.description_tag,
+            canonical_tag=self.build_product_canonical_tag(product.slug_tag),
+            collection_id=product.collection_id,
+            collection_title=product.collection.title,
+            sub_collection_id=product.sub_collection_id,
+            sub_collection_title=sub_collection_title,
+            gallery_set=[
+                {
+                    "id": image.id,
+                    "image": (
+                        f"{request.base_url}"
+                        f"{DiskManager.PRODUCTS_SAVE_PATH}"
+                        f"{image.image}"
+                    ),
+                }
+                for image in sorted(product.images, key=lambda image: image.id)
+            ],
         )
 
     async def public_get_all_sub_collections_service(

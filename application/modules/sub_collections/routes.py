@@ -7,7 +7,9 @@ from application.modules.sub_collections.dependencies import (
 )
 from application.modules.sub_collections.pagination import (
     CustomSubCollectionPaginationParams,
+    PublicSubCollectionProductPaginationParams,
 )
+from application.modules.sub_collections.schemas import PublicGetSubCollectionResponse
 from application.modules.sub_collections.services import SubCollectionServices
 
 sub_collection_router = APIRouter(prefix="/api")
@@ -16,15 +18,29 @@ sub_collection_router = APIRouter(prefix="/api")
 @sub_collection_router.get(
     path="/sub-collections/{slug_tag}",
     tags=["Sub-Collection-Public"],
+    response_model=PublicGetSubCollectionResponse,
 )
 async def public_get_sub_collection(
     request: Request,
     slug_tag: str,
+    params: PublicSubCollectionProductPaginationParams = Depends(),
     service: SubCollectionServices = Depends(sub_collection_services_dp),
 ):
     return await service.public_get_sub_collection_service(
         slug_tag,
+        params.page,
+        params.per_page,
+        params.ordering,
+        params.search,
+        params.collection_id,
+        params.sub_collection_id,
+        params.has_discount,
+        params.min_price,
+        params.max_price,
+        params.limit,
+        params.offset,
         request,
+        f"api/sub-collections/{slug_tag}",
     )
 
 
