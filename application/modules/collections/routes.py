@@ -5,7 +5,11 @@ from application.modules.collections.dependencies import (
     check_collection_existence_by_id_dp,
     collection_services_dp,
 )
-from application.modules.collections.pagination import CustomCollectionPaginationParams
+from application.modules.collections.pagination import (
+    CustomCollectionPaginationParams,
+    PublicCollectionProductPaginationParams,
+)
+from application.modules.collections.schemas import PublicGetCollectionResponse
 from application.modules.collections.services import CollectionServices
 
 collection_router = APIRouter(prefix="/api")
@@ -14,13 +18,30 @@ collection_router = APIRouter(prefix="/api")
 @collection_router.get(
     path="/collections/{slug_tag}",
     tags=["Collection-Public"],
+    response_model=PublicGetCollectionResponse,
 )
 async def public_get_collection(
     request: Request,
     slug_tag: str,
+    params: PublicCollectionProductPaginationParams = Depends(),
     service: CollectionServices = Depends(collection_services_dp),
 ):
-    return await service.public_get_collection_service(slug_tag, request)
+    return await service.public_get_collection_service(
+        slug_tag,
+        params.page,
+        params.per_page,
+        params.ordering,
+        params.search,
+        params.collection_id,
+        params.sub_collection_id,
+        params.has_discount,
+        params.min_price,
+        params.max_price,
+        params.limit,
+        params.offset,
+        request,
+        f"api/collections/{slug_tag}",
+    )
 
 
 @collection_router.get(

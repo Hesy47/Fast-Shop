@@ -3,8 +3,36 @@ from datetime import datetime
 import jdatetime
 from pydantic import BaseModel, field_serializer
 
+from application.modules.products.models import MenuType, ScrollType, StatusType
 
-class PublicGetCollectionResponse(BaseModel):
+
+class PublicCollectionProductGalleryResponse(BaseModel):
+    id: int
+    image: str
+
+
+class PublicCollectionProductResponse(BaseModel):
+    id: int
+    title: str
+    description: str
+    price: int
+    discounted_price: int
+    discount_percent: str
+    status: StatusType
+    menu: MenuType
+    scroll: ScrollType
+    slug_tag: str | None
+    title_tag: str | None
+    description_tag: str | None
+    canonical_tag: str | None
+    collection_id: int
+    collection_title: str
+    sub_collection_id: int | None
+    sub_collection_title: str | None
+    gallery_set: list[PublicCollectionProductGalleryResponse]
+
+
+class PublicCollectionResponse(BaseModel):
     id: int
     title: str
     image: str
@@ -14,13 +42,22 @@ class PublicGetCollectionResponse(BaseModel):
     canonical_tag: str | None
 
 
+class PublicGetCollectionResponse(PublicCollectionResponse):
+    count: int
+    next: str | None
+    previous: str | None
+    total_pages: int
+    current_page: int
+    results: list[PublicCollectionProductResponse]
+
+
 class PublicGetAllCollectionsResponse(BaseModel):
     count: int
     next: str | None
     previous: str | None
     total_pages: int
     current_page: int
-    results: list[PublicGetCollectionResponse]
+    results: list[PublicCollectionResponse]
 
 
 class GetCollectionResponse(BaseModel):
