@@ -44,7 +44,7 @@ class SubCollection(Base):
     )
 
     description_tag: Mapped[str] = mapped_column(
-        String(200),
+        String(500),
         nullable=True,
     )
 
